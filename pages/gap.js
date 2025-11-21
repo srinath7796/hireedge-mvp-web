@@ -152,7 +152,7 @@ const taStyle = {
   marginBottom: "1.5rem",
   padding: "0.75rem",
   borderRadius: "8px",
-  border: "1px solid "#ccc"
+  border: "1px solid #ccc"
 };
 
 const btnStyle = {
