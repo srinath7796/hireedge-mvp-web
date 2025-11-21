@@ -25,6 +25,7 @@ export default function Home() {
         <a href="/skills" style={btnStyle}>Skills Matching</a>
         <a href="/roadmap" style={btnStyle}>Career Roadmap</a>
         <a href="/profile" style={btnStyle}>Talent Profile</a>
+        <a href="/linkedin" style={btnStyle}>LinkedIn Optimiser</a>
       </div>
     </main>
   );
