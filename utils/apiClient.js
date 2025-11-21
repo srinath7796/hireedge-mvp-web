@@ -1,4 +1,4 @@
-const BASE_URL = "https://hireedge-backend-mvp.vercel.app"; // your backend URL
+const BASE_URL = "https://hireedge-backend-mvp.vercel.app"; // backend URL
 
 export async function apiPost(endpoint, data) {
   try {
