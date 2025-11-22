@@ -15,7 +15,7 @@ export default function ResumeOptimiserPage() {
   const [loadingAts, setLoadingAts] = useState(false);
   const [loadingFull, setLoadingFull] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [downloadingWord, setDownloadingWord] = useState(false);
 
   const handleAnalyse = async () => {
     if (!jobDescription || !cvText) {
@@ -25,7 +25,7 @@ export default function ResumeOptimiserPage() {
     setLoadingAts(true);
     const res = await apiPost("/api/generate-resume", {
       jobDescription,
-      cvText
+      cvText,
     });
     if (res && res.ok) {
       setAtsScore(res.atsScore);
@@ -46,7 +46,7 @@ export default function ResumeOptimiserPage() {
     setLoadingFull(true);
     const res = await apiPost("/api/resume-writer", {
       jobDescription,
-      cvText
+      cvText,
     });
     if (res && res.ok) {
       setFullResume(res.resumeText || "");
@@ -66,87 +66,74 @@ export default function ResumeOptimiserPage() {
     }
   };
 
+  // ---- PDF download (browser only, jsPDF) ----
   const handleDownloadPdf = async () => {
     if (!fullResume) {
-      alert("Please generate the full resume first.");
+      alert("Generate the full resume first.");
       return;
     }
     try {
       setDownloadingPdf(true);
 
-      const res = await fetch("/api/resume-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          resumeText: fullResume
-        })
+      // dynamic import so it only runs in the browser
+      const { jsPDF } = await import("jspdf");
+
+      const doc = new jsPDF({
+        unit: "pt",
+        format: "a4",
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("PDF download error:", text);
-        alert("Could not generate PDF. Please try again.");
-        return;
-      }
+      const margin = 40;
+      const lineHeight = 14;
+      const maxWidth = 515; // 595 - 2*40
+      let y = margin;
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "HireEdge-Resume.pdf";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      const lines = doc.splitTextToSize(fullResume, maxWidth);
+
+      lines.forEach((line) => {
+        if (y > 800 - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += lineHeight;
+      });
+
+      doc.save("hireedge-resume.pdf");
     } catch (err) {
-      console.error("PDF download error:", err);
-      alert("Unexpected error while downloading PDF.");
+      console.error("PDF download error", err);
+      alert("Could not generate PDF. Please try again.");
     } finally {
       setDownloadingPdf(false);
     }
   };
 
-  const handleDownloadDocx = async () => {
+  // ---- Word download (.doc using Blob – opens in Word/Google Docs) ----
+  const handleDownloadWord = () => {
     if (!fullResume) {
-      alert("Please generate the full resume first.");
+      alert("Generate the full resume first.");
       return;
     }
     try {
-      setDownloadingDocx(true);
+      setDownloadingWord(true);
 
-      const res = await fetch("/api/resume-docx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          resumeText: fullResume
-        })
+      const blob = new Blob([fullResume], {
+        type: "application/msword",
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("DOCX download error:", text);
-        alert("Could not generate Word document. Please try again.");
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "HireEdge-Resume.docx";
+      a.download = "hireedge-resume.doc";
       document.body.appendChild(a);
       a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("DOCX download error:", err);
-      alert("Unexpected error while downloading Word document.");
+      console.error("Word download error", err);
+      alert("Could not generate Word document. Please try again.");
     } finally {
-      setDownloadingDocx(false);
+      setDownloadingWord(false);
     }
   };
 
@@ -206,11 +193,7 @@ export default function ResumeOptimiserPage() {
           <h2 style={h2Style}>ATS Match Overview</h2>
           {atsScore !== null && (
             <p style={{ fontWeight: 600 }}>
-              ATS Match Score:{" "}
-              <span>
-                {atsScore}
-                {"%"}
-              </span>
+              ATS Match Score: <span>{atsScore}%</span>
             </p>
           )}
 
@@ -263,7 +246,7 @@ export default function ResumeOptimiserPage() {
         <div style={blockStyle}>
           <div style={fullHeaderStyle}>
             <h2 style={h2Style}>Full AI Resume (Send to Recruiters)</h2>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
               <button
                 onClick={handleCopyFull}
                 disabled={!fullResume}
@@ -276,14 +259,14 @@ export default function ResumeOptimiserPage() {
                 disabled={!fullResume || downloadingPdf}
                 style={copyBtnStyle}
               >
-                {downloadingPdf ? "Downloading PDF..." : "Download PDF"}
+                {downloadingPdf ? "Downloading..." : "Download PDF"}
               </button>
               <button
-                onClick={handleDownloadDocx}
-                disabled={!fullResume || downloadingDocx}
+                onClick={handleDownloadWord}
+                disabled={!fullResume || downloadingWord}
                 style={copyBtnStyle}
               >
-                {downloadingDocx ? "Downloading Word..." : "Download Word"}
+                {downloadingWord ? "Downloading..." : "Download Word"}
               </button>
             </div>
           </div>
@@ -294,7 +277,7 @@ export default function ResumeOptimiserPage() {
               <p style={{ color: "#777", fontSize: "0.9rem" }}>
                 Click <strong>Generate Full Resume</strong> to create a clean,
                 ATS-friendly resume you can paste into Word/Google Docs and save
-                as PDF or download as a file.
+                as PDF, or download directly.
               </p>
             )}
           </div>
@@ -308,17 +291,17 @@ export default function ResumeOptimiserPage() {
 const pageStyle = {
   minHeight: "100vh",
   padding: "2rem 1.5rem 3rem",
-  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
 const topSectionStyle = {
   maxWidth: "1100px",
-  margin: "0 auto 2rem"
+  margin: "0 auto 2rem",
 };
 
 const columnStyle = {
   maxWidth: "900px",
-  margin: "0 auto"
+  margin: "0 auto",
 };
 
 const labelStyle = {
@@ -326,7 +309,7 @@ const labelStyle = {
   fontWeight: 600,
   fontSize: "0.9rem",
   marginTop: "0.75rem",
-  marginBottom: "0.3rem"
+  marginBottom: "0.3rem",
 };
 
 const taStyle = {
@@ -335,14 +318,14 @@ const taStyle = {
   border: "1px solid #ccc",
   padding: "0.75rem",
   fontSize: "0.9rem",
-  lineHeight: 1.4
+  lineHeight: 1.4,
 };
 
 const btnRowStyle = {
   display: "flex",
   gap: "0.75rem",
   marginTop: "0.9rem",
-  flexWrap: "wrap"
+  flexWrap: "wrap",
 };
 
 const primaryBtn = {
@@ -352,7 +335,7 @@ const primaryBtn = {
   background: "#111",
   color: "#fff",
   fontWeight: 600,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const secondaryBtn = {
@@ -362,7 +345,7 @@ const secondaryBtn = {
   background: "#fff",
   color: "#111",
   fontWeight: 600,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const bottomSectionStyle = {
@@ -370,39 +353,39 @@ const bottomSectionStyle = {
   margin: "0 auto",
   display: "grid",
   gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1fr)",
-  gap: "1.5rem"
+  gap: "1.5rem",
 };
 
 const blockStyle = {
   borderRadius: "14px",
   border: "1px solid #eee",
   padding: "1rem 1.2rem",
-  background: "#fafafa"
+  background: "#fafafa",
 };
 
 const h2Style = {
   fontSize: "1.2rem",
   margin: 0,
-  marginBottom: "0.5rem"
+  marginBottom: "0.5rem",
 };
 
 const h3Style = {
   fontSize: "1rem",
   marginTop: "0.75rem",
-  marginBottom: "0.4rem"
+  marginBottom: "0.4rem",
 };
 
 const keywordGridStyle = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
   gap: "0.75rem",
-  marginTop: "0.5rem"
+  marginTop: "0.5rem",
 };
 
 const chipWrapStyle = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "0.4rem"
+  gap: "0.4rem",
 };
 
 const chipBase = {
@@ -411,19 +394,19 @@ const chipBase = {
   justifyContent: "center",
   padding: "0.2rem 0.55rem",
   borderRadius: "999px",
-  fontSize: "0.8rem"
+  fontSize: "0.8rem",
 };
 
 const chipGreen = {
   ...chipBase,
   background: "#e8f9f0",
-  border: "1px solid #9bd7b5"
+  border: "1px solid #9bd7b5",
 };
 
 const chipRed = {
   ...chipBase,
   background: "#fdeced",
-  border: "1px solid #f6a5ac"
+  border: "1px solid #f6a5ac",
 };
 
 const preBoxStyle = {
@@ -433,7 +416,7 @@ const preBoxStyle = {
   background: "#fff",
   padding: "0.8rem",
   maxHeight: "420px",
-  overflow: "auto"
+  overflow: "auto",
 };
 
 const preStyle = {
@@ -441,7 +424,7 @@ const preStyle = {
   fontFamily:
     "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   fontSize: "0.85rem",
-  margin: 0
+  margin: 0,
 };
 
 const fullHeaderStyle = {
@@ -449,7 +432,6 @@ const fullHeaderStyle = {
   justifyContent: "space-between",
   alignItems: "center",
   gap: "0.5rem",
-  flexWrap: "wrap"
 };
 
 const copyBtnStyle = {
@@ -458,5 +440,5 @@ const copyBtnStyle = {
   border: "1px solid #ccc",
   background: "#fff",
   fontSize: "0.85rem",
-  cursor: "pointer"
+  cursor: "pointer",
 };
