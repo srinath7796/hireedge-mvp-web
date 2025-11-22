@@ -3,8 +3,9 @@ import { apiPost } from "../utils/apiClient";
 
 export default function RoadmapPage() {
   const [currentRole, setCurrentRole] = useState("");
+  const [targetRole, setTargetRole] = useState("");
   const [skillsInput, setSkillsInput] = useState("");
-  const [industry, setIndustry] = useState("");
+  const [experienceYears, setExperienceYears] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,135 +21,150 @@ export default function RoadmapPage() {
       .filter(Boolean);
 
     setLoading(true);
+
     const res = await apiPost("/api/career-roadmap", {
       currentRole,
+      targetRole,
       skills,
-      targetIndustry: industry || "General"
+      experienceYears
     });
+
     setResult(res);
     setLoading(false);
   };
 
   return (
-    <main
-      style={{
-        padding: "2rem",
-        maxWidth: "900px",
-        margin: "0 auto",
-        fontFamily: "system-ui, sans-serif"
-      }}
-    >
-      <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+    <main style={{ padding: "2rem", maxWidth: "900px", margin: "0 auto" }}>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>
         AI Career Roadmap
       </h1>
+
       <p style={{ marginBottom: "1.5rem", color: "#555" }}>
-        See a clear 3-stage roadmap from where you are now to your next
-        leadership or specialist role.
+        Generate a personalised 12-month career roadmap powered by HireEdge AI.
       </p>
 
-      <label style={{ fontWeight: 600 }}>Your current role</label>
+      {/* Current Role */}
+      <label>Your current role</label>
       <input
-        placeholder="e.g. Sales Manager, Data Analyst, Store Supervisor"
+        placeholder="e.g. Sales Executive"
         value={currentRole}
         onChange={(e) => setCurrentRole(e.target.value)}
-        style={{
-          width: "100%",
-          marginTop: "0.5rem",
-          marginBottom: "1rem",
-          padding: "0.75rem",
-          borderRadius: "8px",
-          border: "1px solid #ccc"
-        }}
+        style={{ width: "100%", marginBottom: "1rem", padding: "0.7rem" }}
       />
 
-      <label style={{ fontWeight: 600 }}>Key skills (comma-separated)</label>
+      {/* Target Role */}
+      <label>Your target role (optional)</label>
+      <input
+        placeholder="e.g. Product Manager"
+        value={targetRole}
+        onChange={(e) => setTargetRole(e.target.value)}
+        style={{ width: "100%", marginBottom: "1rem", padding: "0.7rem" }}
+      />
+
+      {/* Experience */}
+      <label>Years of experience (optional)</label>
+      <input
+        type="number"
+        placeholder="e.g. 3"
+        value={experienceYears}
+        onChange={(e) => setExperienceYears(e.target.value)}
+        style={{ width: "100%", marginBottom: "1rem", padding: "0.7rem" }}
+      />
+
+      {/* Skills */}
+      <label>Your key skills (comma-separated)</label>
       <textarea
-        placeholder="e.g. customer success, data analysis, team leadership, stakeholder management"
+        placeholder="e.g. communication, team leadership, Excel"
         value={skillsInput}
         onChange={(e) => setSkillsInput(e.target.value)}
         style={{
           width: "100%",
           height: "100px",
-          marginTop: "0.5rem",
-          marginBottom: "1rem",
-          padding: "0.75rem",
-          borderRadius: "8px",
-          border: "1px solid #ccc"
-        }}
-      />
-
-      <label style={{ fontWeight: 600 }}>Target industry (optional)</label>
-      <input
-        placeholder="e.g. Tech, Retail, Healthcare"
-        value={industry}
-        onChange={(e) => setIndustry(e.target.value)}
-        style={{
-          width: "100%",
-          marginTop: "0.5rem",
           marginBottom: "1.5rem",
-          padding: "0.75rem",
-          borderRadius: "8px",
-          border: "1px solid #ccc"
+          padding: "0.7rem",
         }}
       />
 
+      {/* Generate Button */}
       <button
         onClick={handleGenerate}
         disabled={loading}
         style={{
-          padding: "0.75rem 1.5rem",
+          padding: "0.8rem 1.6rem",
           borderRadius: "999px",
           border: "none",
-          background: "#111",
+          background: "#000",
           color: "#fff",
           fontWeight: 600,
-          cursor: "pointer"
+          cursor: "pointer",
         }}
       >
-        {loading ? "Generating roadmap..." : "Generate Career Roadmap"}
+        {loading ? "Generating..." : "Generate Roadmap"}
       </button>
 
+      {/* RESULT */}
       {result && result.ok && (
         <section style={{ marginTop: "2rem" }}>
           <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>
-            Your 3-Stage Roadmap
+            Roadmap Summary
           </h2>
+          <p style={{ color: "#444" }}>{result.roadmap.summary}</p>
 
-          {result.roadmap &&
-            result.roadmap.map((step) => (
-              <div
-                key={step.step}
-                style={{
-                  marginBottom: "1.5rem",
-                  padding: "1rem",
-                  borderRadius: "12px",
-                  border: "1px solid #eee",
-                  background: "#fafafa"
-                }}
-              >
-                <h3 style={{ marginBottom: "0.25rem" }}>
-                  Step {step.step}: {step.title}
-                </h3>
-                <p style={{ margin: 0, color: "#555" }}>
-                  <strong>Timeframe:</strong> {step.horizon}
-                </p>
-                <p style={{ margin: "0.25rem 0 0.75rem 0", color: "#555" }}>
-                  <strong>Target role:</strong> {step.suggestedRole}
-                </p>
-                <ul style={{ paddingLeft: "1.25rem", margin: 0 }}>
-                  {step.actions.map((a, idx) => (
-                    <li key={idx}>{a}</li>
-                  ))}
-                </ul>
-              </div>
+          <h3 style={{ marginTop: "1.5rem" }}>Timeframe</h3>
+          <p>{result.roadmap.timeframe_months} months</p>
+
+          <h3 style={{ marginTop: "1.5rem" }}>Target Roles</h3>
+          <ul>
+            {result.roadmap.target_roles.map((r, i) => (
+              <li key={i}>{r}</li>
             ))}
+          </ul>
 
-          {result.note && (
-            <p style={{ color: "#555" }}>{result.note}</p>
-          )}
+          <h3 style={{ marginTop: "2rem" }}>Roadmap Stages</h3>
+
+          {result.roadmap.stages.map((stage, i) => (
+            <div
+              key={i}
+              style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+              }}
+            >
+              <h4 style={{ marginBottom: "0.3rem" }}>{stage.name}</h4>
+              <p>
+                <strong>Duration:</strong> {stage.duration_weeks} weeks
+              </p>
+
+              <strong>Goals:</strong>
+              <ul>
+                {stage.goals.map((g, j) => (
+                  <li key={j}>{g}</li>
+                ))}
+              </ul>
+
+              <strong>Skills to learn:</strong>
+              <ul>
+                {stage.skills_to_learn.map((s, j) => (
+                  <li key={j}>{s}</li>
+                ))}
+              </ul>
+
+              <strong>Resources:</strong>
+              <ul>
+                {stage.resources.map((r, j) => (
+                  <li key={j}>
+                    {r.type}: {r.name} — <em>{r.provider}</em> ({r.notes})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
 
+      {/* ERROR */}
       {result && !result.ok && (
         <p style={{ marginTop: "1rem", color: "red" }}>
           Error: {result.error || "Something went wrong"}
