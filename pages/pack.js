@@ -1,4 +1,4 @@
-// pages/pack.js
+// /pages/pack.js
 import { useState } from "react";
 import { apiPost } from "../utils/apiClient";
 
@@ -18,13 +18,17 @@ export default function CareerPackPage() {
     setError("");
     setResult(null);
 
-    if (!cvText.trim()) {
-      setError("Please paste your CV text first.");
+    if (!cvText) {
+      alert("Please paste your CV text first.");
+      return;
+    }
+
+    if (!currentRole || !targetRole) {
+      alert("Please fill both current role and target role.");
       return;
     }
 
     setLoading(true);
-
     const res = await apiPost("/api/career-pack", {
       currentRole,
       targetRole,
@@ -34,24 +38,23 @@ export default function CareerPackPage() {
       cvText
     });
 
-    if (!res || !res.ok) {
+    if (res && res.ok) {
+      setResult(res);
+    } else {
       setError(res?.error || "Career pack generation failed");
-      setLoading(false);
-      return;
     }
 
-    setResult(res);
     setLoading(false);
   };
 
   const renderList = (items) => {
     if (!items || !items.length) {
-      return <p style={{ margin: 0, color: "#777" }}>No items.</p>;
+      return <p style={{ color: "#777", margin: 0 }}>No items.</p>;
     }
     return (
-      <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem" }}>
-        {items.map((item, i) => (
-          <li key={i}>{item}</li>
+      <ul style={{ paddingLeft: "1.25rem", margin: 0 }}>
+        {items.map((item, idx) => (
+          <li key={idx}>{item}</li>
         ))}
       </ul>
     );
@@ -61,31 +64,27 @@ export default function CareerPackPage() {
     <main
       style={{
         padding: "2rem",
-        maxWidth: "960px",
+        maxWidth: "1100px",
         margin: "0 auto",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+        fontFamily: "system-ui, sans-serif"
       }}
     >
-      <h1 style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>
+      <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
         HireEdge – One-Click Career Pack
       </h1>
-      <p style={{ marginBottom: "1.5rem", color: "#555", maxWidth: "720px" }}>
-        Paste your job description and CV once. HireEdge will generate ATS match, skills
-        gaps, 3-stage roadmap, LinkedIn copy, interview questions, and UK visa hints in
-        one go.
+      <p style={{ marginBottom: "2rem", color: "#555" }}>
+        Paste your job description and CV once. HireEdge will generate ATS
+        match, skills gaps, 3-stage roadmap, LinkedIn copy, interview questions
+        and UK visa hints in one go.
       </p>
 
-      {/* INPUT FORM */}
+      {/* Top form grid */}
       <section
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "0.75rem 1.5rem",
-          marginBottom: "1.5rem",
-          border: "1px solid #eee",
-          borderRadius: "12px",
-          padding: "1rem 1.25rem",
-          background: "#fafafa"
+          gap: "1rem",
+          marginBottom: "1.5rem"
         }}
       >
         <div>
@@ -96,8 +95,39 @@ export default function CareerPackPage() {
             placeholder="e.g. Senior Academic Counsellor"
             style={{
               width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
+              marginTop: "0.4rem",
+              marginBottom: "0.75rem",
+              padding: "0.7rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc"
+            }}
+          />
+
+          <label style={{ fontWeight: 600 }}>Years of experience</label>
+          <input
+            value={experienceYears}
+            onChange={(e) => setExperienceYears(e.target.value)}
+            placeholder="e.g. 4.5"
+            style={{
+              width: "100%",
+              marginTop: "0.4rem",
+              marginBottom: "0.75rem",
+              padding: "0.7rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc"
+            }}
+          />
+
+          <label style={{ fontWeight: 600 }}>Job description (optional)</label>
+          <textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Paste the main job description here..."
+            style={{
+              width: "100%",
+              height: "180px",
+              marginTop: "0.4rem",
+              padding: "0.7rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
@@ -112,31 +142,14 @@ export default function CareerPackPage() {
             placeholder="e.g. Sales Manager"
             style={{
               width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
+              marginTop: "0.4rem",
+              marginBottom: "0.75rem",
+              padding: "0.7rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
           />
-        </div>
 
-        <div>
-          <label style={{ fontWeight: 600 }}>Years of experience</label>
-          <input
-            value={experienceYears}
-            onChange={(e) => setExperienceYears(e.target.value)}
-            placeholder="e.g. 4.5"
-            style={{
-              width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
-              borderRadius: "8px",
-              border: "1px solid #ccc"
-            }}
-          />
-        </div>
-
-        <div>
           <label style={{ fontWeight: 600 }}>Sector (optional)</label>
           <input
             value={sector}
@@ -144,48 +157,26 @@ export default function CareerPackPage() {
             placeholder="e.g. Tech, Retail, Healthcare"
             style={{
               width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
+              marginTop: "0.4rem",
+              marginBottom: "0.75rem",
+              padding: "0.7rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
           />
-        </div>
 
-        <div>
-          <label style={{ fontWeight: 600 }}>Job description (optional)</label>
-          <textarea
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            placeholder="Paste the main parts of the job description here."
-            rows={8}
-            style={{
-              width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-              fontFamily: "inherit",
-              fontSize: "0.9rem"
-            }}
-          />
-        </div>
-
-        <div>
           <label style={{ fontWeight: 600 }}>Your CV text (required)</label>
           <textarea
             value={cvText}
             onChange={(e) => setCvText(e.target.value)}
-            placeholder="Paste your CV text here."
-            rows={8}
+            placeholder="Paste your full CV text here..."
             style={{
               width: "100%",
-              marginTop: "0.35rem",
-              padding: "0.6rem",
+              height: "180px",
+              marginTop: "0.4rem",
+              padding: "0.7rem",
               borderRadius: "8px",
-              border: "1px solid #ccc",
-              fontFamily: "inherit",
-              fontSize: "0.9rem"
+              border: "1px solid #ccc"
             }}
           />
         </div>
@@ -195,77 +186,66 @@ export default function CareerPackPage() {
         onClick={handleGenerate}
         disabled={loading}
         style={{
-          display: "inline-block",
-          padding: "0.8rem 1.6rem",
+          padding: "0.85rem 1.8rem",
           borderRadius: "999px",
           border: "none",
           background: "#111",
           color: "#fff",
           fontWeight: 600,
           cursor: loading ? "default" : "pointer",
-          marginBottom: "0.75rem"
+          marginBottom: "1.5rem"
         }}
       >
         {loading ? "Generating Career Pack..." : "Generate Career Pack"}
       </button>
 
       {error && (
-        <p style={{ color: "red", marginTop: "0.25rem", marginBottom: "1rem" }}>
+        <p style={{ color: "red", marginTop: "0.5rem", marginBottom: "1.5rem" }}>
           Error: {error}
         </p>
       )}
 
-      {/* RESULTS */}
-      {result && (
-        <div style={{ marginTop: "1.5rem" }}>
-          {/* ATS MATCH */}
+      {/* Results */}
+      {result && result.ok && (
+        <>
+          {/* ATS */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1rem",
+              background: "#fafafa"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.25rem", fontSize: "1rem" }}>
               ATS Match & Resume Optimisation
             </h2>
-            <p style={{ marginTop: 0 }}>
-              <b>ATS Match:</b>{" "}
-              {result.ats?.match ? "Good match found" : "Gaps found"}
+            <p style={{ margin: 0, color: "#555", marginBottom: "0.75rem" }}>
+              ATS Match: {result.ats.match ? "Strong match" : "Gaps found"}
             </p>
 
-            {result.ats?.gaps && result.ats.gaps.length > 0 && (
-              <>
-                <h4 style={{ marginBottom: "0.25rem" }}>Gaps</h4>
-                {renderList(result.ats.gaps)}
-              </>
-            )}
-
-            {result.ats?.recommendations &&
-              result.ats.recommendations.length > 0 && (
-                <>
-                  <h4 style={{ marginBottom: "0.25rem", marginTop: "0.75rem" }}>
-                    Recommendations
-                  </h4>
-                  {renderList(result.ats.recommendations)}
-                </>
-              )}
+            {renderList([
+              ...(result.ats.gaps || []).map((g) => `Gap: ${g}`),
+              ...(result.ats.recommendations || []).map(
+                (r) => `Recommendation: ${r}`
+              )
+            ])}
           </section>
 
-          {/* SKILLS */}
+          {/* Skills */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1rem",
+              background: "#fff"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.75rem", fontSize: "1rem" }}>
               Skills Match & Gap Plan
             </h2>
-
             <div
               style={{
                 display: "grid",
@@ -274,118 +254,145 @@ export default function CareerPackPage() {
               }}
             >
               <div>
-                <h4>Matched skills</h4>
-                {renderList(result.skills?.explicit)}
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>
+                  Matched skills
+                </h3>
+                {renderList(result.skills.matched)}
               </div>
               <div>
-                <h4>Missing skills</h4>
-                {renderList(result.skills?.missing)}
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>
+                  Missing skills
+                </h3>
+                {renderList(result.skills.missing)}
               </div>
             </div>
           </section>
 
-          {/* ROADMAP */}
+          {/* Roadmap */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1rem",
+              background: "#fafafa"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.75rem", fontSize: "1rem" }}>
               3-Stage Career Roadmap
             </h2>
-
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr 1fr",
-                gap: "1.25rem"
+                gap: "1.5rem"
               }}
             >
               <div>
-                <h4>Immediate actions</h4>
-                {renderList(result.roadmap?.immediate)}
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>
+                  Immediate actions
+                </h3>
+                {renderList(result.roadmap.immediate)}
               </div>
               <div>
-                <h4>Short-term (next 6–12 months)</h4>
-                {renderList(result.roadmap?.short_term)}
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>
+                  Short-term (next 6–12 months)
+                </h3>
+                {renderList(result.roadmap.shortTerm)}
               </div>
               <div>
-                <h4>Long-term direction</h4>
-                {renderList(result.roadmap?.long_term)}
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.4rem" }}>
+                  Long-term direction
+                </h3>
+                {renderList(result.roadmap.longTerm)}
               </div>
             </div>
           </section>
 
-          {/* LINKEDIN */}
+          {/* LinkedIn */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1rem",
+              background: "#fff"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.75rem", fontSize: "1rem" }}>
               LinkedIn Headline & About
             </h2>
-
-            <h4>Suggested headline</h4>
-            <p style={{ marginTop: "0.25rem" }}>{result.linkedin?.headline}</p>
-
-            <h4 style={{ marginTop: "0.75rem" }}>About / Summary</h4>
-            <p style={{ marginTop: "0.25rem", whiteSpace: "pre-line" }}>
-              {result.linkedin?.summary}
+            <h3 style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>
+              Suggested headline
+            </h3>
+            <p style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+              {result.linkedin.headline || "No headline generated."}
             </p>
 
-            <h4 style={{ marginTop: "0.75rem" }}>Recommended skills</h4>
-            {renderList(result.linkedin?.skills)}
+            <h3 style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>
+              About / Summary
+            </h3>
+            <p style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+              {result.linkedin.summary || "No summary generated."}
+            </p>
+
+            <h3 style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>
+              Recommended skills
+            </h3>
+            {renderList(result.linkedin.skills)}
           </section>
 
-          {/* INTERVIEW */}
+          {/* Interview */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1rem",
+              background: "#fafafa"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.75rem", fontSize: "1rem" }}>
               Interview Questions & Model Answers (Hints)
             </h2>
 
-            <h4>Tips</h4>
-            {renderList(result.interview?.tips)}
+            <h3 style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>Tips</h3>
+            {renderList(result.interview.tips)}
 
-            <h4 style={{ marginTop: "0.75rem" }}>Example questions</h4>
-            {renderList(result.interview?.example_questions)}
+            <h3
+              style={{
+                fontSize: "0.9rem",
+                marginBottom: "0.25rem",
+                marginTop: "0.9rem"
+              }}
+            >
+              Example questions
+            </h3>
+            {renderList(result.interview.questions)}
           </section>
 
-          {/* VISA */}
+          {/* Visa */}
           <section
             style={{
+              borderRadius: "16px",
               border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              marginBottom: "1rem"
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1.5rem",
+              background: "#fff"
             }}
           >
-            <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>
+            <h2 style={{ margin: 0, marginBottom: "0.75rem", fontSize: "1rem" }}>
               Visa Sponsorship Pathway Hints
             </h2>
-            <p style={{ marginTop: 0 }}>
-              <b>Status:</b> {result.visa?.status || "Not specified in CV"}
+            <p style={{ margin: 0, marginBottom: "0.35rem" }}>
+              <strong>Status:</strong> {result.visa.status || "Not specified"}
             </p>
-            <p style={{ marginTop: "0.35rem" }}>
-              <b>Recommendation:</b>{" "}
-              {result.visa?.recommendation ||
-                "Ensure valid work visa or right to work for target country."}
+            <p style={{ margin: 0 }}>
+              <strong>Recommendation:</strong>{" "}
+              {result.visa.recommendation || "No specific recommendation."}
             </p>
           </section>
-        </div>
+        </>
       )}
     </main>
   );
