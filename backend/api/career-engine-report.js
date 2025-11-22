@@ -3,6 +3,7 @@
 
 const { callChatCompletion, tryParseJSON } = require("../utils/aiClient");
 const { getBody, sendBadRequest, sendOk, sendServerError } = require("../utils/http");
+const { ensureString, requireFields, truncateText } = require("../utils/validation");
 
 async function runJsonPrompt(system, user, temperature = 0.4) {
   const content = await callChatCompletion({
@@ -89,8 +90,12 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { cvText, jobDescription, userProfile = {} } = getBody(req);
-  if (!cvText || !jobDescription) {
+  const payload = getBody(req);
+  const jobDescription = truncateText(ensureString(payload.jobDescription));
+  const cvText = truncateText(ensureString(payload.cvText));
+  const userProfile = typeof payload.userProfile === "object" && payload.userProfile !== null ? payload.userProfile : {};
+
+  if (!requireFields({ jobDescription, cvText }, ["jobDescription", "cvText"])) {
     sendBadRequest(res, "cvText and jobDescription are required");
     return;
   }

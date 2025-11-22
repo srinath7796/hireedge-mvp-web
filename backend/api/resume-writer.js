@@ -3,6 +3,7 @@
 
 const { callChatCompletion } = require("../utils/aiClient");
 const { getBody, sendBadRequest, sendOk, sendServerError } = require("../utils/http");
+const { ensureString, requireFields, truncateText } = require("../utils/validation");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -10,8 +11,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { jobDescription, cvText } = getBody(req);
-  if (!jobDescription || !cvText) {
+  const payload = getBody(req);
+  const jobDescription = truncateText(ensureString(payload.jobDescription));
+  const cvText = truncateText(ensureString(payload.cvText));
+
+  if (!requireFields({ jobDescription, cvText }, ["jobDescription", "cvText"])) {
     sendBadRequest(res, "Please provide jobDescription and cvText");
     return;
   }

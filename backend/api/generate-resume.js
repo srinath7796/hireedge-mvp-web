@@ -3,12 +3,7 @@
 
 const { callChatCompletion, tryParseJSON } = require("../utils/aiClient");
 const { getBody, sendBadRequest, sendOk, sendServerError } = require("../utils/http");
-
-function validatePayload(payload) {
-  if (payload.jobDescription && payload.cvText) return true;
-  if (payload.fullName && payload.targetRole) return true;
-  return false;
-}
+const { ensureString, requireFields, truncateText } = require("../utils/validation");
 
 async function buildAtsResponse(jobDescription, cvText) {
   const prompt = [
@@ -62,21 +57,33 @@ module.exports = async function handler(req, res) {
   }
 
   const payload = getBody(req);
-  if (!validatePayload(payload)) {
+  const jobDescription = truncateText(ensureString(payload.jobDescription));
+  const cvText = truncateText(ensureString(payload.cvText));
+  const formFullName = ensureString(payload.fullName);
+  const formTargetRole = ensureString(payload.targetRole);
+
+  const hasAtsInputs = requireFields({ jobDescription, cvText }, ["jobDescription", "cvText"]);
+  const hasFormInputs = requireFields({ formFullName, formTargetRole }, ["formFullName", "formTargetRole"]);
+
+  if (!hasAtsInputs && !hasFormInputs) {
     sendBadRequest(res, "Missing required fields. Provide jobDescription+cvText or fullName+targetRole.");
     return;
   }
 
   try {
     // Case 1: ATS analysis path
-    if (payload.jobDescription && payload.cvText) {
-      const atsResponse = await buildAtsResponse(payload.jobDescription, payload.cvText);
+    if (hasAtsInputs) {
+      const atsResponse = await buildAtsResponse(jobDescription, cvText);
       sendOk(res, atsResponse);
       return;
     }
 
     // Case 2: Resume builder path
-    const resumeText = await buildResumeFromForm(payload);
+    const resumeText = await buildResumeFromForm({
+      ...payload,
+      fullName: formFullName,
+      targetRole: formTargetRole,
+    });
     sendOk(res, { resumeText });
   } catch (err) {
     console.error("generate-resume error", err);
