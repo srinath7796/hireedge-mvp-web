@@ -1,131 +1,154 @@
-import { useState } from "react";
+// /api/career-pack.js
+import OpenAI from "openai";
 
-export default function CareerPackPage() {
-  const [currentRole, setCurrentRole] = useState("");
-  const [targetRole, setTargetRole] = useState("");
-  const [experienceYears, setExperienceYears] = useState("");
-  const [sector, setSector] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [cvText, setCvText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+const ALLOWED_ORIGIN = "https://hireedge-mvp-web.vercel.app";
 
-  const generatePack = async () => {
-    setError("");
-    setData(null);
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-    if (!currentRole || !targetRole || !cvText) {
-      setError("Please fill required fields.");
-      return;
+export default async function handler(req, res) {
+  // CORS
+  res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Method not allowed" });
+  }
+
+  try {
+    const {
+      currentRole,
+      targetRole,
+      yearsExperience,
+      sector,
+      jobDescription,
+      cvText,
+    } = req.body || {};
+
+    if (!cvText) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "cvText is required for analysis" });
     }
 
-    setLoading(true);
+    const safeCurrentRole = currentRole || "Not specified";
+    const safeTargetRole = targetRole || "Not specified";
+    const safeYears = yearsExperience || "Not specified";
+    const safeSector = sector || "Not specified";
+    const safeJobDesc = jobDescription || "Not provided";
 
-    try {
-      const res = await fetch(
-        "https://hireedge-backend-mvp.vercel.app/api/career-pack",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            currentRole,
-            targetRole,
-            experienceYears,
-            sector,
-            jobDescription,
-            cvText
-          })
-        }
-      );
+    const systemPrompt = `
+You are HireEdge's One-Click Career Pack Engine.
 
-      const json = await res.json();
-      setLoading(false);
+You MUST return a **valid JSON object only**, with this exact structure and keys:
 
-      if (!json.ok) {
-        setError(json.error || "Career pack failed");
-        return;
-      }
-
-      setData(json);
-    } catch (err) {
-      setLoading(false);
-      setError("API error");
-    }
-  };
-
-  return (
-    <div style={{ padding: "50px" }}>
-      <h1>HireEdge – One-Click Career Pack</h1>
-
-      {/* FORM */}
-      <input
-        placeholder="Current role"
-        value={currentRole}
-        onChange={(e) => setCurrentRole(e.target.value)}
-      />
-      <input
-        placeholder="Target role"
-        value={targetRole}
-        onChange={(e) => setTargetRole(e.target.value)}
-      />
-      <input
-        placeholder="Years of experience"
-        value={experienceYears}
-        onChange={(e) => setExperienceYears(e.target.value)}
-      />
-      <input
-        placeholder="Sector (optional)"
-        value={sector}
-        onChange={(e) => setSector(e.target.value)}
-      />
-      <textarea
-        placeholder="Job description (optional)"
-        value={jobDescription}
-        onChange={(e) => setJobDescription(e.target.value)}
-      />
-      <textarea
-        placeholder="Your CV text"
-        value={cvText}
-        onChange={(e) => setCvText(e.target.value)}
-      />
-
-      <button onClick={generatePack} disabled={loading}>
-        {loading ? "Generating..." : "Generate Career Pack"}
-      </button>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {/* OUTPUT */}
-      {data && (
-        <div style={{ marginTop: "40px" }}>
-          <h2>ATS Match & Resume Optimisation</h2>
-          <p>ATS Match: {data.ats.match ? "Good" : "Gaps found"}</p>
-          <p>Gaps: {data.ats.gaps.join(", ")}</p>
-
-          <h2>Skills Match & Gap Plan</h2>
-          <p>Matched: {data.skills.explicit.join(", ")}</p>
-          <p>Missing: {data.skills.missing.join(", ")}</p>
-
-          <h2>3-Stage Career Roadmap</h2>
-          <p>Immediate: {data.roadmap.immediate.join(", ")}</p>
-          <p>Short-term: {data.roadmap.short_term.join(", ")}</p>
-          <p>Long-term: {data.roadmap.long_term.join(", ")}</p>
-
-          <h2>LinkedIn Headline & About</h2>
-          <p><b>Headline:</b> {data.linkedin.headline}</p>
-          <p><b>About:</b> {data.linkedin.summary}</p>
-
-          <h2>Interview Questions & Answers</h2>
-          <p>{data.interview.tips.join(", ")}</p>
-          <p>{data.interview.example_questions.join(", ")}</p>
-
-          <h2>Visa Sponsorship Pathway</h2>
-          <p><b>Status:</b> {data.visa.status}</p>
-          <p><b>Recommendation:</b> {data.visa.recommendation}</p>
-        </div>
-      )}
-    </div>
-  );
+{
+  "ok": true,
+  "ats": {
+    "match": boolean,
+    "gaps": string[],
+    "recommendations": string[]
+  },
+  "skills": {
+    "explicit": string[],
+    "missing": string[]
+  },
+  "roadmap": {
+    "immediate": string[],
+    "short_term": string[],
+    "long_term": string[]
+  },
+  "linkedin": {
+    "headline": string,
+    "summary": string,
+    "skills": string[]
+  },
+  "interview": {
+    "tips": string[],
+    "example_questions": string[]
+  },
+  "visa": {
+    "status": string,
+    "recommendation": string
+  }
 }
 
+Do NOT include any extra keys.
+Do NOT include explanations, markdown or comments.
+ONLY return JSON.
+    `.trim();
+
+    const userPrompt = `
+Current role: ${safeCurrentRole}
+Target role: ${safeTargetRole}
+Years of experience: ${safeYears}
+Sector: ${safeSector}
+
+Job description (optional):
+${safeJobDesc}
+
+Candidate CV text:
+${cvText}
+    `.trim();
+
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
+
+    const content = response.output[0]?.content?.[0]?.text ?? "";
+    let jsonText = content.trim();
+
+    // Sometimes model wraps in ```json ```
+    if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/^```[a-zA-Z]*\n?/, "").replace(/```$/, "");
+    }
+
+    let data;
+    try {
+      data = JSON.parse(jsonText);
+    } catch (parseErr) {
+      // Try to recover JSON substring if anything weird came back
+      const match = jsonText.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          data = JSON.parse(match[0]);
+        } catch {
+          return res.status(200).json({
+            ok: false,
+            error: "Failed to parse AI response",
+            rawText: jsonText,
+          });
+        }
+      } else {
+        return res.status(200).json({
+          ok: false,
+          error: "Failed to parse AI response",
+          rawText: jsonText,
+        });
+      }
+    }
+
+    // Ensure ok flag exists
+    if (typeof data.ok !== "boolean") {
+      data.ok = true;
+    }
+
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error("career-pack error", err);
+    return res.status(200).json({
+      ok: false,
+      error: "Server error while generating career pack",
+    });
+  }
+}
