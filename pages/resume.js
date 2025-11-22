@@ -1,6 +1,8 @@
 // pages/resume.js
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { apiPost } from "../utils/apiClient";
+
+const INPUT_ERROR = "Please paste both Job Description and CV.";
 
 export default function ResumeOptimiserPage() {
   const [jobDescription, setJobDescription] = useState("");
@@ -12,48 +14,70 @@ export default function ResumeOptimiserPage() {
   const [optimisedDraft, setOptimisedDraft] = useState("");
 
   const [fullResume, setFullResume] = useState("");
+  const [error, setError] = useState("");
+
   const [loadingAts, setLoadingAts] = useState(false);
   const [loadingFull, setLoadingFull] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingWord, setDownloadingWord] = useState(false);
 
+  const guardInputs = useCallback(() => {
+    if (!jobDescription.trim() || !cvText.trim()) {
+      setError(INPUT_ERROR);
+      alert(INPUT_ERROR);
+      return false;
+    }
+    setError("");
+    return true;
+  }, [jobDescription, cvText]);
+
   const handleAnalyse = async () => {
-    if (!jobDescription || !cvText) {
-      alert("Please paste both Job Description and CV.");
-      return;
-    }
+    if (!guardInputs()) return;
     setLoadingAts(true);
-    const res = await apiPost("/api/generate-resume", {
-      jobDescription,
-      cvText,
-    });
-    if (res && res.ok) {
-      setAtsScore(res.atsScore);
-      setMatched(res.matchedKeywords || []);
-      setMissing(res.missingKeywords || []);
-      setOptimisedDraft(res.optimisedResume || "");
-    } else {
-      alert(res?.error || "Something went wrong with ATS analysis.");
+    try {
+      const response = await apiPost("/api/generate-resume", {
+        jobDescription,
+        cvText,
+      });
+      if (!response?.ok) {
+        throw new Error(response?.error || "Something went wrong with ATS analysis.");
+      }
+      const data = response.data || response;
+      setAtsScore(data.atsScore ?? null);
+      setMatched(data.matchedKeywords || []);
+      setMissing(data.missingKeywords || []);
+      setOptimisedDraft(data.optimisedResume || "");
+    } catch (err) {
+      console.error("ATS analysis error", err);
+      setError(err.message);
+      alert(err.message);
+    } finally {
+      setLoadingAts(false);
     }
-    setLoadingAts(false);
   };
 
   const handleFullResume = async () => {
-    if (!jobDescription || !cvText) {
-      alert("Please paste both Job Description and CV.");
-      return;
-    }
+    if (!guardInputs()) return;
     setLoadingFull(true);
-    const res = await apiPost("/api/resume-writer", {
-      jobDescription,
-      cvText,
-    });
-    if (res && res.ok) {
-      setFullResume(res.resumeText || "");
-    } else {
-      alert(res?.error || "Something went wrong generating full resume.");
+    try {
+      const response = await apiPost("/api/resume-writer", {
+        jobDescription,
+        cvText,
+      });
+      if (!response?.ok) {
+        throw new Error(
+          response?.error || "Something went wrong generating the full resume."
+        );
+      }
+      const data = response.data || response;
+      setFullResume(data.resumeText || "");
+    } catch (err) {
+      console.error("Full resume error", err);
+      setError(err.message);
+      alert(err.message);
+    } finally {
+      setLoadingFull(false);
     }
-    setLoadingFull(false);
   };
 
   const handleCopyFull = async () => {
@@ -66,7 +90,6 @@ export default function ResumeOptimiserPage() {
     }
   };
 
-  // ---- PDF download (browser only, jsPDF) ----
   const handleDownloadPdf = async () => {
     if (!fullResume) {
       alert("Generate the full resume first.");
@@ -74,14 +97,8 @@ export default function ResumeOptimiserPage() {
     }
     try {
       setDownloadingPdf(true);
-
-      // dynamic import so it only runs in the browser
       const { jsPDF } = await import("jspdf");
-
-      const doc = new jsPDF({
-        unit: "pt",
-        format: "a4",
-      });
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
 
       const margin = 40;
       const lineHeight = 14;
@@ -89,7 +106,6 @@ export default function ResumeOptimiserPage() {
       let y = margin;
 
       const lines = doc.splitTextToSize(fullResume, maxWidth);
-
       lines.forEach((line) => {
         if (y > 800 - margin) {
           doc.addPage();
@@ -108,7 +124,6 @@ export default function ResumeOptimiserPage() {
     }
   };
 
-  // ---- Word download (.doc using Blob – opens in Word/Google Docs) ----
   const handleDownloadWord = () => {
     if (!fullResume) {
       alert("Generate the full resume first.");
@@ -116,11 +131,7 @@ export default function ResumeOptimiserPage() {
     }
     try {
       setDownloadingWord(true);
-
-      const blob = new Blob([fullResume], {
-        type: "application/msword",
-      });
-
+      const blob = new Blob([fullResume], { type: "application/msword" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -168,6 +179,12 @@ export default function ResumeOptimiserPage() {
             placeholder="Paste your existing CV text here..."
           />
 
+          {error && (
+            <p style={{ color: "#b42318", marginTop: "0.3rem", fontSize: "0.9rem" }}>
+              {error}
+            </p>
+          )}
+
           <div style={btnRowStyle}>
             <button
               onClick={handleAnalyse}
@@ -188,7 +205,6 @@ export default function ResumeOptimiserPage() {
       </section>
 
       <section style={bottomSectionStyle}>
-        {/* ATS Overview */}
         <div style={blockStyle}>
           <h2 style={h2Style}>ATS Match Overview</h2>
           {atsScore !== null && (
@@ -242,7 +258,6 @@ export default function ResumeOptimiserPage() {
           </div>
         </div>
 
-        {/* Full AI Resume */}
         <div style={blockStyle}>
           <div style={fullHeaderStyle}>
             <h2 style={h2Style}>Full AI Resume (Send to Recruiters)</h2>
@@ -276,8 +291,8 @@ export default function ResumeOptimiserPage() {
             ) : (
               <p style={{ color: "#777", fontSize: "0.9rem" }}>
                 Click <strong>Generate Full Resume</strong> to create a clean,
-                ATS-friendly resume you can paste into Word/Google Docs and save
-                as PDF, or download directly.
+                ATS-friendly resume you can paste into Word/Google Docs and save as PDF,
+                or download directly.
               </p>
             )}
           </div>
@@ -287,7 +302,6 @@ export default function ResumeOptimiserPage() {
   );
 }
 
-// ---- styles ----
 const pageStyle = {
   minHeight: "100vh",
   padding: "2rem 1.5rem 3rem",

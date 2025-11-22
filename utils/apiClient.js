@@ -1,33 +1,60 @@
 // utils/apiClient.js
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://hireedge-backend-mvp.vercel.app";
+// Simple fetch wrapper for backend API calls with consistent error handling.
+
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
+async function parseJson(response) {
+  try {
+    return await response.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+function normalizeSuccess(data) {
+  if (data && typeof data === "object" && "ok" in data) {
+    return data;
+  }
+  return { ok: true, ...data };
+}
 
 export async function apiPost(path, body) {
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
-    let data = null;
-    try {
-      data = await res.json();
-    } catch {
-      // ignore JSON parse errors
-    }
+    const data = await parseJson(res);
 
     if (!res.ok) {
-      return {
-        ok: false,
-        error: data?.error || `Request failed with status ${res.status}`
-      };
+      const errorMessage =
+        data?.error || data?.message || `Request failed with status ${res.status}`;
+      return { ok: false, error: errorMessage };
     }
 
-    return data;
+    return normalizeSuccess(data);
   } catch (err) {
     console.error("apiPost error", err);
+    return { ok: false, error: "Network error" };
+  }
+}
+
+export async function apiGet(path) {
+  try {
+    const res = await fetch(`${BASE_URL}${path}`);
+    const data = await parseJson(res);
+
+    if (!res.ok) {
+      const errorMessage =
+        data?.error || data?.message || `Request failed with status ${res.status}`;
+      return { ok: false, error: errorMessage };
+    }
+
+    return normalizeSuccess(data);
+  } catch (err) {
+    console.error("apiGet error", err);
     return { ok: false, error: "Network error" };
   }
 }
