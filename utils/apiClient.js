@@ -1,8 +1,7 @@
-const BASE_URL = "https://hireedge-backend-mvp.vercel.app"; // backend URL
-
-export async function apiPost(endpoint, data) {
+// utils/apiClient.js
+export async function apiPost(path, data = {}) {
   try {
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
+    const res = await fetch(path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -10,19 +9,10 @@ export async function apiPost(endpoint, data) {
       body: JSON.stringify(data)
     });
 
-    return await res.json();
+    const json = await res.json();
+    return json;
   } catch (err) {
-    console.error("API Error:", err);
-    return { error: "Network error" };
-  }
-}
-
-export async function apiGet(endpoint) {
-  try {
-    const res = await fetch(`${BASE_URL}${endpoint}`);
-    return await res.json();
-  } catch (err) {
-    console.error("API Error:", err);
+    console.error("apiPost error:", err);
     return { error: "Network error" };
   }
 }
