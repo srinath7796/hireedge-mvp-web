@@ -11,15 +11,15 @@ export default function CareerPackPage() {
   const [cvText, setCvText] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
   const handleGenerate = async () => {
     setError("");
     setResult(null);
 
     if (!cvText) {
-      setError("Please paste your CV text first.");
+      alert("Please paste your CV text first.");
       return;
     }
 
@@ -34,57 +34,53 @@ export default function CareerPackPage() {
         cvText
       });
 
-      console.log("Career pack result:", res); // helpful for debugging
-
       if (!res || res.ok === false) {
         setError(res?.error || "Career pack generation failed");
-        setResult(null);
       } else {
+        // res is exactly the JSON you showed:
+        // { ok, ats, skills, roadmap, linkedin, interview, visa }
         setResult(res);
       }
     } catch (e) {
-      console.error("Career pack error", e);
-      setError("Network or server error while generating pack.");
-      setResult(null);
+      console.error("career-pack error", e);
+      setError("Network or server error");
     } finally {
       setLoading(false);
     }
   };
 
-  const sectionCard = (title, content) => (
-    <section
-      style={{
-        marginTop: "1.5rem",
-        padding: "1rem 1.25rem",
-        borderRadius: "12px",
-        border: "1px solid #eee",
-        background: "#fafafa"
-      }}
-    >
-      <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>{title}</h2>
-      {content}
-    </section>
-  );
+  const sectionStyle = {
+    border: "1px solid #eee",
+    borderRadius: "12px",
+    padding: "1.25rem 1.5rem",
+    marginTop: "1rem",
+    background: "#fafafa"
+  };
+
+  const sectionTitleStyle = {
+    fontWeight: 600,
+    marginBottom: "0.75rem"
+  };
 
   return (
     <main
       style={{
         padding: "2rem",
-        maxWidth: "1100px",
+        maxWidth: "1000px",
         margin: "0 auto",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+        fontFamily: "system-ui, sans-serif"
       }}
     >
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
         HireEdge – One-Click Career Pack
       </h1>
-      <p style={{ marginBottom: "1.5rem", color: "#555", maxWidth: "700px" }}>
+      <p style={{ marginBottom: "1.5rem", color: "#555", maxWidth: "650px" }}>
         Paste your job description and CV once. HireEdge will generate ATS
         match, skills gaps, 3-stage roadmap, LinkedIn copy, interview questions
-        and visa hints in one go.
+        and UK visa hints in one go.
       </p>
 
-      {/* Form */}
+      {/* FORM GRID */}
       <div
         style={{
           display: "grid",
@@ -98,11 +94,11 @@ export default function CareerPackPage() {
           <input
             value={currentRole}
             onChange={(e) => setCurrentRole(e.target.value)}
-            placeholder="e.g. Sales Assistant"
+            placeholder="e.g. Senior Academic Counsellor"
             style={{
               width: "100%",
-              marginTop: "0.4rem",
-              padding: "0.65rem",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
@@ -117,8 +113,8 @@ export default function CareerPackPage() {
             placeholder="e.g. Sales Manager"
             style={{
               width: "100%",
-              marginTop: "0.4rem",
-              padding: "0.65rem",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
@@ -133,8 +129,8 @@ export default function CareerPackPage() {
             placeholder="e.g. 4.5"
             style={{
               width: "100%",
-              marginTop: "0.4rem",
-              padding: "0.65rem",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
@@ -146,39 +142,32 @@ export default function CareerPackPage() {
           <input
             value={sector}
             onChange={(e) => setSector(e.target.value)}
-            placeholder="e.g. Retail, Tech"
+            placeholder="e.g. Tech, Retail, Healthcare"
             style={{
               width: "100%",
-              marginTop: "0.4rem",
-              padding: "0.65rem",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
               borderRadius: "8px",
               border: "1px solid #ccc"
             }}
           />
         </div>
-      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1rem",
-          marginBottom: "1rem"
-        }}
-      >
         <div>
           <label style={{ fontWeight: 600 }}>Job description (optional)</label>
           <textarea
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
-            placeholder="Paste the job description here"
+            placeholder="Paste the main part of the job description here"
             style={{
               width: "100%",
-              height: "180px",
-              marginTop: "0.4rem",
+              height: "160px",
+              marginTop: "0.5rem",
               padding: "0.75rem",
               borderRadius: "8px",
-              border: "1px solid #ccc"
+              border: "1px solid #ccc",
+              fontFamily: "inherit",
+              fontSize: "0.9rem"
             }}
           />
         </div>
@@ -191,11 +180,13 @@ export default function CareerPackPage() {
             placeholder="Paste your CV text here"
             style={{
               width: "100%",
-              height: "180px",
-              marginTop: "0.4rem",
+              height: "160px",
+              marginTop: "0.5rem",
               padding: "0.75rem",
               borderRadius: "8px",
-              border: "1px solid #ccc"
+              border: "1px solid #ccc",
+              fontFamily: "inherit",
+              fontSize: "0.9rem"
             }}
           />
         </div>
@@ -205,7 +196,7 @@ export default function CareerPackPage() {
         onClick={handleGenerate}
         disabled={loading}
         style={{
-          padding: "0.8rem 1.7rem",
+          padding: "0.8rem 1.8rem",
           borderRadius: "999px",
           border: "none",
           background: "#111",
@@ -218,208 +209,241 @@ export default function CareerPackPage() {
       </button>
 
       {error && (
-        <p style={{ marginTop: "0.75rem", color: "red", fontSize: "0.9rem" }}>
+        <p style={{ marginTop: "1rem", color: "red" }}>
           Error: {error}
         </p>
       )}
 
-      {/* Results */}
+      {/* RESULT SECTIONS */}
       {result && result.ok && (
         <div style={{ marginTop: "2rem" }}>
-          {result.summary &&
-            sectionCard("Career Snapshot", <p>{result.summary}</p>)}
+          {/* 1. ATS */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>
+              ATS Match &amp; Resume Optimisation
+            </div>
+            {result.ats ? (
+              <>
+                <p style={{ margin: "0 0 0.5rem 0" }}>
+                  <strong>ATS Match:</strong>{" "}
+                  {result.ats.match ? "Likely match" : "Gaps found"}
+                </p>
 
-          {result.ats &&
-            sectionCard(
-              "ATS Match & Resume Optimisation",
-              <div>
-                {result.ats.score != null && (
-                  <p>
-                    <strong>ATS Match Score:</strong> {result.ats.score}%
-                  </p>
-                )}
-                {result.ats.matchedKeywords && (
-                  <p>
-                    <strong>Matched keywords:</strong>{" "}
-                    {result.ats.matchedKeywords.join(", ")}
-                  </p>
-                )}
-                {result.ats.missingKeywords &&
-                  result.ats.missingKeywords.length > 0 && (
-                    <p>
-                      <strong>Missing keywords:</strong>{" "}
-                      {result.ats.missingKeywords.join(", ")}
-                    </p>
-                  )}
-                {result.ats.optimisedSummary && (
+                {result.ats.gaps && result.ats.gaps.length > 0 && (
                   <>
-                    <h3 style={{ marginTop: "0.75rem" }}>Optimised Summary</h3>
-                    <p>{result.ats.optimisedSummary}</p>
+                    <p style={{ margin: "0.5rem 0 0.25rem 0" }}>
+                      <strong>Key gaps:</strong>
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                      {result.ats.gaps.map((g, i) => (
+                        <li key={i}>{g}</li>
+                      ))}
+                    </ul>
                   </>
                 )}
-              </div>
-            )}
 
-          {result.skills &&
-            sectionCard(
-              "Skills Match & Gap Plan",
+                {result.ats.recommendations &&
+                  result.ats.recommendations.length > 0 && (
+                    <>
+                      <p style={{ margin: "0.75rem 0 0.25rem 0" }}>
+                        <strong>Optimisation suggestions:</strong>
+                      </p>
+                      <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                        {result.ats.recommendations.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+              </>
+            ) : (
+              <p>No ATS data returned.</p>
+            )}
+          </div>
+
+          {/* 2. Skills */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>Skills Match &amp; Gap Plan</div>
+            {result.skills ? (
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "1.5rem"
+                }}
+              >
+                <div>
+                  <p>
+                    <strong>Matched skills</strong>
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                    {result.skills.explicit?.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p>
+                    <strong>Missing skills</strong>
+                  </p>
+                  {result.skills.missing && result.skills.missing.length > 0 ? (
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                      {result.skills.missing.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No major missing skills detected.</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p>No skills data returned.</p>
+            )}
+          </div>
+
+          {/* 3. Roadmap */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>3-Stage Career Roadmap</div>
+            {result.roadmap ? (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                   gap: "1rem"
                 }}
               >
                 <div>
-                  <h3>Matched Skills</h3>
-                  <ul>
-                    {(result.skills.matched || []).map((s, i) => (
-                      <li key={i}>{s}</li>
+                  <p>
+                    <strong>Immediate actions</strong>
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                    {result.roadmap.immediate?.map((t, i) => (
+                      <li key={i}>{t}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <h3>Partially Matched</h3>
-                  <ul>
-                    {(result.skills.partial || []).map((s, i) => (
-                      <li key={i}>{s}</li>
+                  <p>
+                    <strong>Short-term (next 6–12 months)</strong>
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                    {result.roadmap.short_term?.map((t, i) => (
+                      <li key={i}>{t}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <h3>Missing Skills & Actions</h3>
-                  <ul>
-                    {(result.skills.missingPlan || []).map((item, i) => (
-                      <li key={i}>
-                        <strong>{item.skill}:</strong> {item.actions.join(" • ")}
-                      </li>
+                  <p>
+                    <strong>Long-term direction</strong>
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                    {result.roadmap.long_term?.map((t, i) => (
+                      <li key={i}>{t}</li>
                     ))}
                   </ul>
                 </div>
               </div>
+            ) : (
+              <p>No roadmap data returned.</p>
             )}
+          </div>
 
-          {result.roadmap &&
-            sectionCard(
-              "3-Stage Career Roadmap",
-              <div>
-                {result.roadmap.summary && <p>{result.roadmap.summary}</p>}
-                <ul style={{ paddingLeft: "1.25rem" }}>
-                  {(result.roadmap.stages || []).map((stage, i) => (
-                    <li key={i} style={{ marginBottom: "0.75rem" }}>
-                      <strong>
-                        {stage.name} – {stage.duration || ""}
-                      </strong>
-                      {stage.goals && (
-                        <p style={{ margin: "0.25rem 0" }}>
-                          Goals: {stage.goals.join(", ")}
-                        </p>
-                      )}
-                      {stage.actions && (
-                        <ul style={{ paddingLeft: "1.25rem" }}>
-                          {stage.actions.map((a, j) => (
-                            <li key={j}>{a}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          {/* 4. LinkedIn */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>LinkedIn Headline &amp; About</div>
+            {result.linkedin ? (
+              <>
+                <p>
+                  <strong>Suggested headline</strong>
+                </p>
+                <p style={{ marginTop: 0 }}>{result.linkedin.headline}</p>
 
-          {result.linkedin &&
-            sectionCard(
-              "LinkedIn Headline & About",
-              <div>
-                {result.linkedin.headline && (
+                <p style={{ marginTop: "1rem" }}>
+                  <strong>About / Summary</strong>
+                </p>
+                <p style={{ whiteSpace: "pre-line", marginTop: 0 }}>
+                  {result.linkedin.summary}
+                </p>
+
+                {result.linkedin.skills && (
                   <>
-                    <h3>Headline</h3>
-                    <p>{result.linkedin.headline}</p>
-                  </>
-                )}
-                {result.linkedin.about && (
-                  <>
-                    <h3>About</h3>
-                    <p style={{ whiteSpace: "pre-line" }}>
-                      {result.linkedin.about}
+                    <p style={{ marginTop: "1rem" }}>
+                      <strong>Key LinkedIn skills</strong>
                     </p>
-                  </>
-                )}
-                {result.linkedin.strengths && (
-                  <>
-                    <h3>Strengths</h3>
-                    <ul>
-                      {result.linkedin.strengths.map((s, i) => (
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                      {result.linkedin.skills.map((s, i) => (
                         <li key={i}>{s}</li>
                       ))}
                     </ul>
                   </>
                 )}
-              </div>
+              </>
+            ) : (
+              <p>No LinkedIn data returned.</p>
             )}
+          </div>
 
-          {result.interview &&
-            sectionCard(
-              "Interview Questions & Model Answers",
-              <div>
-                {(result.interview.questions || []).map((q, i) => (
-                  <div key={i} style={{ marginBottom: "0.75rem" }}>
+          {/* 5. Interview */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>
+              Interview Questions &amp; Model Answers (Hints)
+            </div>
+            {result.interview ? (
+              <>
+                {result.interview.tips && (
+                  <>
                     <p>
-                      <strong>Q{i + 1}.</strong> {q.question}
+                      <strong>Preparation tips</strong>
                     </p>
-                    {q.answer && (
-                      <p style={{ marginLeft: "0.5rem", color: "#444" }}>
-                        <strong>Suggested answer:</strong> {q.answer}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                      {result.interview.tips.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
 
-          {result.visa &&
-            sectionCard(
-              "Visa Sponsorship Pathway Hints",
-              <div>
-                {result.visa.summary && <p>{result.visa.summary}</p>}
-                {(result.visa.routes || []).map((route, i) => (
-                  <div key={i} style={{ marginTop: "0.75rem" }}>
-                    <p>
-                      <strong>{route.name}</strong>
+                {result.interview.example_questions && (
+                  <>
+                    <p style={{ marginTop: "1rem" }}>
+                      <strong>Example questions to practise</strong>
                     </p>
-                    {route.notes && <p style={{ color: "#555" }}>{route.notes}</p>}
-                    {route.steps && (
-                      <ul style={{ paddingLeft: "1.25rem" }}>
-                        {route.steps.map((s, j) => (
-                          <li key={j}>{s}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    <ol style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                      {result.interview.example_questions.map((q, i) => (
+                        <li key={i}>{q}</li>
+                      ))}
+                    </ol>
+                  </>
+                )}
+              </>
+            ) : (
+              <p>No interview hints returned.</p>
             )}
+          </div>
+
+          {/* 6. Visa */}
+          <div style={sectionStyle}>
+            <div style={sectionTitleStyle}>
+              Visa Sponsorship Pathway Hints
+            </div>
+            {result.visa ? (
+              <>
+                <p>
+                  <strong>Status:</strong> {result.visa.status || "Not specified"}
+                </p>
+                {result.visa.recommendation && (
+                  <p style={{ marginTop: "0.5rem" }}>
+                    <strong>Recommendation:</strong>{" "}
+                    {result.visa.recommendation}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p>No visa hints returned.</p>
+            )}
+          </div>
         </div>
-      )}
-
-      {/* Debug fallback – show raw JSON if nothing rendered */}
-      {result && !result.ok && !error && (
-        <section style={{ marginTop: "2rem" }}>
-          <h2>Raw AI response (debug)</h2>
-          <pre
-            style={{
-              background: "#111",
-              color: "#0f0",
-              padding: "1rem",
-              borderRadius: "8px",
-              overflowX: "auto",
-              fontSize: "0.8rem"
-            }}
-          >
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </section>
       )}
     </main>
   );
