@@ -23,7 +23,7 @@ export default function ResumeOptimiserPage() {
     setLoadingAts(true);
     const res = await apiPost("/api/generate-resume", {
       jobDescription,
-      cvText
+      cvText,
     });
     if (res && res.ok) {
       setAtsScore(res.atsScore);
@@ -44,7 +44,7 @@ export default function ResumeOptimiserPage() {
     setLoadingFull(true);
     const res = await apiPost("/api/resume-writer", {
       jobDescription,
-      cvText
+      cvText,
     });
     if (res && res.ok) {
       setFullResume(res.resumeText || "");
@@ -61,6 +61,43 @@ export default function ResumeOptimiserPage() {
       alert("Full resume copied. Paste into Word/Docs and save as PDF.");
     } catch {
       alert("Could not copy automatically. Please copy manually.");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!fullResume) {
+      alert("Generate the full resume first.");
+      return;
+    }
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({
+        unit: "pt",
+        format: "a4",
+      });
+
+      const margin = 40;
+      const lineHeight = 14;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const maxWidth =
+        doc.internal.pageSize.getWidth() - margin * 2;
+
+      const lines = doc.splitTextToSize(fullResume, maxWidth);
+      let cursorY = margin;
+
+      lines.forEach((line) => {
+        if (cursorY > pageHeight - margin) {
+          doc.addPage();
+          cursorY = margin;
+        }
+        doc.text(line, margin, cursorY);
+        cursorY += lineHeight;
+      });
+
+      doc.save("HireEdge-Resume.pdf");
+    } catch (err) {
+      console.error("PDF error", err);
+      alert("Could not generate PDF in browser. Please copy text and paste into Word/PDF as fallback.");
     }
   };
 
@@ -177,13 +214,22 @@ export default function ResumeOptimiserPage() {
         <div style={blockStyle}>
           <div style={fullHeaderStyle}>
             <h2 style={h2Style}>Full AI Resume (Send to Recruiters)</h2>
-            <button
-              onClick={handleCopyFull}
-              disabled={!fullResume}
-              style={copyBtnStyle}
-            >
-              Copy Resume Text
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                onClick={handleCopyFull}
+                disabled={!fullResume}
+                style={copyBtnStyle}
+              >
+                Copy Text
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                disabled={!fullResume}
+                style={copyBtnStyle}
+              >
+                Download PDF
+              </button>
+            </div>
           </div>
           <div style={preBoxStyle}>
             {fullResume ? (
@@ -192,7 +238,7 @@ export default function ResumeOptimiserPage() {
               <p style={{ color: "#777", fontSize: "0.9rem" }}>
                 Click <strong>Generate Full Resume</strong> to create a clean,
                 ATS-friendly resume you can paste into Word/Google Docs and
-                save as PDF.
+                save as PDF – or download directly as a PDF.
               </p>
             )}
           </div>
@@ -206,17 +252,17 @@ export default function ResumeOptimiserPage() {
 const pageStyle = {
   minHeight: "100vh",
   padding: "2rem 1.5rem 3rem",
-  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
 const topSectionStyle = {
   maxWidth: "1100px",
-  margin: "0 auto 2rem"
+  margin: "0 auto 2rem",
 };
 
 const columnStyle = {
   maxWidth: "900px",
-  margin: "0 auto"
+  margin: "0 auto",
 };
 
 const labelStyle = {
@@ -224,7 +270,7 @@ const labelStyle = {
   fontWeight: 600,
   fontSize: "0.9rem",
   marginTop: "0.75rem",
-  marginBottom: "0.3rem"
+  marginBottom: "0.3rem",
 };
 
 const taStyle = {
@@ -233,14 +279,14 @@ const taStyle = {
   border: "1px solid #ccc",
   padding: "0.75rem",
   fontSize: "0.9rem",
-  lineHeight: 1.4
+  lineHeight: 1.4,
 };
 
 const btnRowStyle = {
   display: "flex",
   gap: "0.75rem",
   marginTop: "0.9rem",
-  flexWrap: "wrap"
+  flexWrap: "wrap",
 };
 
 const primaryBtn = {
@@ -250,7 +296,7 @@ const primaryBtn = {
   background: "#111",
   color: "#fff",
   fontWeight: 600,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const secondaryBtn = {
@@ -260,7 +306,7 @@ const secondaryBtn = {
   background: "#fff",
   color: "#111",
   fontWeight: 600,
-  cursor: "pointer"
+  cursor: "pointer",
 };
 
 const bottomSectionStyle = {
@@ -268,39 +314,39 @@ const bottomSectionStyle = {
   margin: "0 auto",
   display: "grid",
   gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1fr)",
-  gap: "1.5rem"
+  gap: "1.5rem",
 };
 
 const blockStyle = {
   borderRadius: "14px",
   border: "1px solid #eee",
   padding: "1rem 1.2rem",
-  background: "#fafafa"
+  background: "#fafafa",
 };
 
 const h2Style = {
   fontSize: "1.2rem",
   margin: 0,
-  marginBottom: "0.5rem"
+  marginBottom: "0.5rem",
 };
 
 const h3Style = {
   fontSize: "1rem",
   marginTop: "0.75rem",
-  marginBottom: "0.4rem"
+  marginBottom: "0.4rem",
 };
 
 const keywordGridStyle = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
   gap: "0.75rem",
-  marginTop: "0.5rem"
+  marginTop: "0.5rem",
 };
 
 const chipWrapStyle = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "0.4rem"
+  gap: "0.4rem",
 };
 
 const chipBase = {
@@ -309,19 +355,19 @@ const chipBase = {
   justifyContent: "center",
   padding: "0.2rem 0.55rem",
   borderRadius: "999px",
-  fontSize: "0.8rem"
+  fontSize: "0.8rem",
 };
 
 const chipGreen = {
   ...chipBase,
   background: "#e8f9f0",
-  border: "1px solid #9bd7b5"
+  border: "1px solid "#9bd7b5",
 };
 
 const chipRed = {
   ...chipBase,
   background: "#fdeced",
-  border: "1px solid #f6a5ac"
+  border: "1px solid #f6a5ac",
 };
 
 const preBoxStyle = {
@@ -331,7 +377,7 @@ const preBoxStyle = {
   background: "#fff",
   padding: "0.8rem",
   maxHeight: "420px",
-  overflow: "auto"
+  overflow: "auto",
 };
 
 const preStyle = {
@@ -339,14 +385,14 @@ const preStyle = {
   fontFamily:
     "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   fontSize: "0.85rem",
-  margin: 0
+  margin: 0,
 };
 
 const fullHeaderStyle = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  gap: "0.5rem"
+  gap: "0.5rem",
 };
 
 const copyBtnStyle = {
@@ -355,5 +401,5 @@ const copyBtnStyle = {
   border: "1px solid #ccc",
   background: "#fff",
   fontSize: "0.85rem",
-  cursor: "pointer"
+  cursor: "pointer",
 };
