@@ -24,6 +24,7 @@ export default function Home() {
 
         {/* BUTTON GRID */}
         <section style={gridStyle}>
+          <ToolButton href="/bundle" label="Full HireEdge Report" />
           <ToolButton href="/resume" label="ATS Resume Optimiser" />
           <ToolButton href="/skills" label="AI Skills Matching" />
           <ToolButton href="/roadmap" label="AI Career Roadmap" />
