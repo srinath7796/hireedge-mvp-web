@@ -1,17 +1,17 @@
+// pages/interview.js
 import { useState } from "react";
 import { apiPost } from "../utils/apiClient";
 
-export default function InterviewPage() {
+export default function InterviewPrepPage() {
+  const [targetRole, setTargetRole] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [cvText, setCvText] = useState("");
-  const [role, setRole] = useState("");
-  const [experienceLevel, setExperienceLevel] = useState("mid");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
-    if (!jobDescription || !cvText) {
-      alert("Please paste both the Job Description and your CV.");
+    if (!jobDescription && !targetRole) {
+      alert("Please fill at least Target role or Job description.");
       return;
     }
 
@@ -19,8 +19,7 @@ export default function InterviewPage() {
     const res = await apiPost("/api/interview-prep", {
       jobDescription,
       cvText,
-      role,
-      experienceLevel
+      targetRole,
     });
     setResult(res);
     setLoading(false);
@@ -30,173 +29,239 @@ export default function InterviewPage() {
     <main
       style={{
         padding: "2rem",
-        maxWidth: "1000px",
+        maxWidth: "1100px",
         margin: "0 auto",
-        fontFamily: "system-ui, sans-serif"
+        fontFamily: "system-ui, sans-serif",
       }}
     >
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-        AI Interview Preparation
+        AI Interview Prep Coach
       </h1>
       <p style={{ marginBottom: "1.5rem", color: "#555" }}>
-        Paste the job description and your CV. We&apos;ll generate likely
-        interview questions, STAR-format answers and focus areas.
+        Paste the job description and your CV. HireEdge will generate tailored
+        interview questions, STAR-style answers, and key tips.
       </p>
 
-      <label style={{ fontWeight: 600 }}>Job Description</label>
-      <textarea
-        placeholder="Paste the full job description here..."
-        value={jobDescription}
-        onChange={(e) => setJobDescription(e.target.value)}
-        style={taStyle}
-      />
-
-      <label style={{ fontWeight: 600 }}>Your CV</label>
-      <textarea
-        placeholder="Paste your CV here..."
-        value={cvText}
-        onChange={(e) => setCvText(e.target.value)}
-        style={{ ...taStyle, height: "180px" }}
-      />
-
-      <div
+      {/* Inputs */}
+      <section
         style={{
-          display: "flex",
-          gap: "1rem",
-          flexWrap: "wrap",
-          marginBottom: "1rem"
+          display: "grid",
+          gridTemplateColumns: "1.2fr 1.2fr",
+          gap: "1.5rem",
+          marginBottom: "1.5rem",
         }}
       >
-        <div style={{ flex: 1, minWidth: "200px" }}>
-          <label style={{ fontWeight: 600 }}>Target role (optional)</label>
+        <div>
+          <label style={{ fontWeight: 600 }}>Target role</label>
           <input
-            placeholder="e.g. Sales Manager, Customer Success Manager"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            style={inputStyle}
+            placeholder="e.g. Sales Manager, Product Manager"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            style={{
+              width: "100%",
+              marginTop: "0.5rem",
+              marginBottom: "1rem",
+              padding: "0.7rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
+          />
+
+          <label style={{ fontWeight: 600 }}>Job description</label>
+          <textarea
+            placeholder="Paste the job description here..."
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            style={{
+              width: "100%",
+              height: "200px",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: "180px" }}>
-          <label style={{ fontWeight: 600 }}>Experience level</label>
-          <select
-            value={experienceLevel}
-            onChange={(e) => setExperienceLevel(e.target.value)}
-            style={{ ...inputStyle, height: "2.7rem" }}
-          >
-            <option value="junior">Junior / Graduate</option>
-            <option value="mid">Mid-level</option>
-            <option value="senior">Senior</option>
-          </select>
+        <div>
+          <label style={{ fontWeight: 600 }}>Your CV / background</label>
+          <textarea
+            placeholder="Paste your CV text or key experience here..."
+            value={cvText}
+            onChange={(e) => setCvText(e.target.value)}
+            style={{
+              width: "100%",
+              height: "260px",
+              marginTop: "0.5rem",
+              padding: "0.75rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
+          />
         </div>
-      </div>
+      </section>
 
       <button
         onClick={handleGenerate}
         disabled={loading}
-        style={btnStyle}
+        style={{
+          padding: "0.9rem 1.8rem",
+          borderRadius: "999px",
+          border: "none",
+          background: "#000",
+          color: "#fff",
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
       >
-        {loading ? "Generating..." : "Generate Interview Pack"}
+        {loading ? "Generating..." : "Generate Interview Prep"}
       </button>
 
+      {/* Results */}
       {result && result.ok && (
-        <section style={{ marginTop: "2rem" }}>
-          <p style={{ color: "#555" }}>{result.summary}</p>
+        <section style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
+          {/* Role summary */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: "12px",
+              border: "1px solid #eee",
+              background: "#fafafa",
+            }}
+          >
+            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>
+              Role Summary & Focus
+            </h2>
+            {result.roleSummary && (
+              <p style={{ marginBottom: "0.75rem" }}>{result.roleSummary}</p>
+            )}
+            {result.focusAreas && result.focusAreas.length > 0 && (
+              <p style={{ margin: 0 }}>
+                <strong>Focus areas:</strong>{" "}
+                {result.focusAreas.join(" · ")}
+              </p>
+            )}
+          </div>
 
-          {result.weakAreas && result.weakAreas.length > 0 && (
+          {/* Question sets */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: "1rem",
+            }}
+          >
             <div
               style={{
-                marginTop: "1rem",
-                marginBottom: "1.5rem",
-                padding: "1rem",
-                borderRadius: "8px",
-                border: "1px solid #f0c",
-                background: "#fff7ff"
+                borderRadius: "10px",
+                border: "1px solid #e5f4ea",
+                background: "#f4fbf7",
+                padding: "0.75rem",
               }}
             >
-              <strong>Possible gaps to address in your CV / answers:</strong>
-              <ul>
-                {result.weakAreas.map((w, idx) => (
-                  <li key={idx}>{w}</li>
+              <h3>Behavioural / STAR questions</h3>
+              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                {result.behaviouralQuestions?.map((q, i) => (
+                  <li key={i} style={{ marginBottom: "0.75rem" }}>
+                    <strong>Q:</strong> {q.question}
+                    <br />
+                    <strong>A:</strong> {q.answer}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div
+              style={{
+                borderRadius: "10px",
+                border: "1px solid #eef",
+                background: "#f7f8ff",
+                padding: "0.75rem",
+              }}
+            >
+              <h3>Role-specific questions</h3>
+              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                {result.roleSpecificQuestions?.map((q, i) => (
+                  <li key={i} style={{ marginBottom: "0.75rem" }}>
+                    <strong>Q:</strong> {q.question}
+                    <br />
+                    <strong>A:</strong> {q.answer}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Strength questions */}
+          {result.strengthQuestions &&
+            result.strengthQuestions.length > 0 && (
+              <div
+                style={{
+                  borderRadius: "10px",
+                  border: "1px solid #fff4dd",
+                  background: "#fffaf0",
+                  padding: "0.75rem",
+                }}
+              >
+                <h3>Strength / weakness questions</h3>
+                <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                  {result.strengthQuestions.map((q, i) => (
+                    <li key={i} style={{ marginBottom: "0.75rem" }}>
+                      <strong>Q:</strong> {q.question}
+                      <br />
+                      <strong>A:</strong> {q.answer}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+          {/* Closing questions */}
+          {result.closingQuestions && result.closingQuestions.length > 0 && (
+            <div
+              style={{
+                borderRadius: "10px",
+                border: "1px solid #eee",
+                background: "#fafafa",
+                padding: "0.75rem",
+              }}
+            >
+              <h3>Questions to ask the interviewer</h3>
+              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                {result.closingQuestions.map((q, i) => (
+                  <li key={i}>{q}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          <QuestionGroup
-            title="General Interview Questions"
-            questions={result.generalQuestions}
-          />
-          <QuestionGroup
-            title="Role-specific Questions"
-            questions={result.roleQuestions}
-          />
-          <QuestionGroup
-            title="Behavioural (STAR) Questions"
-            questions={result.behaviouralQuestions}
-          />
+          {/* Tips */}
+          {result.tips && result.tips.length > 0 && (
+            <div
+              style={{
+                borderRadius: "10px",
+                border: "1px solid #eee",
+                background: "#f9f9f9",
+                padding: "0.75rem",
+              }}
+            >
+              <h3>Final tips for this interview</h3>
+              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+                {result.tips.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
       )}
 
+      {/* Error */}
       {result && !result.ok && (
-        <p style={{ marginTop: "1rem", color: "red" }}>
+        <p style={{ marginTop: "1.5rem", color: "red" }}>
           Error: {result.error || "Something went wrong"}
         </p>
       )}
     </main>
   );
 }
-
-function QuestionGroup({ title, questions }) {
-  if (!questions || questions.length === 0) return null;
-
-  return (
-    <div style={{ marginTop: "1.5rem" }}>
-      <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem" }}>{title}</h2>
-      {questions.map((q, idx) => (
-        <div
-          key={idx}
-          style={{
-            marginBottom: "1rem",
-            padding: "1rem",
-            borderRadius: "10px",
-            border: "1px solid #eee",
-            background: "#fafafa"
-          }}
-        >
-          <p style={{ fontWeight: 600 }}>Q{idx + 1}. {q.question}</p>
-          <p style={{ whiteSpace: "pre-wrap" }}>{q.answer}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const taStyle = {
-  width: "100%",
-  height: "140px",
-  marginTop: "0.5rem",
-  marginBottom: "1rem",
-  padding: "0.75rem",
-  borderRadius: "8px",
-  border: "1px solid #ccc"
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "0.75rem",
-  marginTop: "0.5rem",
-  marginBottom: "1rem",
-  borderRadius: "8px",
-  border: "1px solid #ccc"
-};
-
-const btnStyle = {
-  padding: "0.75rem 1.5rem",
-  borderRadius: "999px",
-  border: "none",
-  background: "#111",
-  color: "#fff",
-  fontWeight: 600,
-  cursor: "pointer"
-};
