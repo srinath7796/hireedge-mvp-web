@@ -1,5 +1,11 @@
 // pages/resume.js
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import Layout from "../components/Layout";
+import { Card, Section } from "../components/ui/Card";
+import Textarea from "../components/ui/Textarea";
+import { PrimaryButton, SecondaryButton, GhostButton } from "../components/ui/Button";
+import { ErrorBanner, SuccessBanner } from "../components/ui/Alert";
+import { LoadingDots } from "../components/ui/Loading";
 import { apiPost } from "../utils/apiClient";
 
 const INPUT_ERROR = "Please paste both Job Description and CV.";
@@ -15,16 +21,21 @@ export default function ResumeOptimiserPage() {
 
   const [fullResume, setFullResume] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [loadingAts, setLoadingAts] = useState(false);
   const [loadingFull, setLoadingFull] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingWord, setDownloadingWord] = useState(false);
 
+  const disableActions = useMemo(
+    () => loadingAts || loadingFull || downloadingPdf || downloadingWord,
+    [loadingAts, loadingFull, downloadingPdf, downloadingWord]
+  );
+
   const guardInputs = useCallback(() => {
     if (!jobDescription.trim() || !cvText.trim()) {
       setError(INPUT_ERROR);
-      alert(INPUT_ERROR);
       return false;
     }
     setError("");
@@ -34,6 +45,7 @@ export default function ResumeOptimiserPage() {
   const handleAnalyse = async () => {
     if (!guardInputs()) return;
     setLoadingAts(true);
+    setSuccess("");
     try {
       const response = await apiPost("/api/generate-resume", {
         jobDescription,
@@ -50,7 +62,6 @@ export default function ResumeOptimiserPage() {
     } catch (err) {
       console.error("ATS analysis error", err);
       setError(err.message);
-      alert(err.message);
     } finally {
       setLoadingAts(false);
     }
@@ -59,6 +70,7 @@ export default function ResumeOptimiserPage() {
   const handleFullResume = async () => {
     if (!guardInputs()) return;
     setLoadingFull(true);
+    setSuccess("");
     try {
       const response = await apiPost("/api/resume-writer", {
         jobDescription,
@@ -71,10 +83,10 @@ export default function ResumeOptimiserPage() {
       }
       const data = response.data || response;
       setFullResume(data.resumeText || "");
+      setSuccess("Full resume ready. Copy or download below.");
     } catch (err) {
       console.error("Full resume error", err);
       setError(err.message);
-      alert(err.message);
     } finally {
       setLoadingFull(false);
     }
@@ -84,15 +96,15 @@ export default function ResumeOptimiserPage() {
     if (!fullResume) return;
     try {
       await navigator.clipboard.writeText(fullResume);
-      alert("Full resume copied. Paste into Word/Docs and save as PDF.");
+      setSuccess("Full resume copied. Paste into Word/Docs and save as PDF.");
     } catch {
-      alert("Could not copy automatically. Please copy manually.");
+      setError("Could not copy automatically. Please copy manually.");
     }
   };
 
   const handleDownloadPdf = async () => {
     if (!fullResume) {
-      alert("Generate the full resume first.");
+      setError("Generate the full resume first.");
       return;
     }
     try {
@@ -102,7 +114,7 @@ export default function ResumeOptimiserPage() {
 
       const margin = 40;
       const lineHeight = 14;
-      const maxWidth = 515; // 595 - 2*40
+      const maxWidth = 515;
       let y = margin;
 
       const lines = doc.splitTextToSize(fullResume, maxWidth);
@@ -116,9 +128,10 @@ export default function ResumeOptimiserPage() {
       });
 
       doc.save("hireedge-resume.pdf");
+      setSuccess("PDF downloaded.");
     } catch (err) {
       console.error("PDF download error", err);
-      alert("Could not generate PDF. Please try again.");
+      setError("Could not generate PDF. Please try again.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -126,7 +139,7 @@ export default function ResumeOptimiserPage() {
 
   const handleDownloadWord = () => {
     if (!fullResume) {
-      alert("Generate the full resume first.");
+      setError("Generate the full resume first.");
       return;
     }
     try {
@@ -140,319 +153,152 @@ export default function ResumeOptimiserPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setSuccess("Word document downloaded.");
     } catch (err) {
       console.error("Word download error", err);
-      alert("Could not generate Word document. Please try again.");
+      setError("Could not generate Word document. Please try again.");
     } finally {
       setDownloadingWord(false);
     }
   };
 
   return (
-    <main style={pageStyle}>
-      <section style={topSectionStyle}>
-        <div style={columnStyle}>
-          <h1 style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>
-            ATS Resume Optimiser & AI Resume Writer
-          </h1>
-          <p style={{ color: "#555", marginBottom: "1rem" }}>
-            Paste the job description and your current CV. HireEdge will analyse
-            the ATS match, highlight keywords and generate a fully rewritten,
-            recruiter-ready resume.
-          </p>
+    <Layout
+      title="ATS Resume Optimiser & AI Resume Writer"
+      subtitle="Paste the job description and your current CV. HireEdge will analyse the ATS match, highlight keywords and generate a fully rewritten, recruiter-ready resume."
+    >
+      <Section>
+        <Card
+          title="Your inputs"
+          subtitle="Structured fields keep the ATS and resume writer focused on the right signals."
+          actions={
+            (loadingAts || loadingFull) && (
+              <LoadingDots label={loadingAts ? "Analysing..." : "Generating..."} />
+            )
+          }
+        >
+          <div className="form-grid">
+            <Textarea
+              id="jobDescription"
+              label="Job Description"
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste the full job description here..."
+              aria-required
+            />
+            <Textarea
+              id="cvText"
+              label="Your CV"
+              value={cvText}
+              onChange={(e) => setCvText(e.target.value)}
+              placeholder="Paste your existing CV text here..."
+              aria-required
+            />
+          </div>
 
-          <label style={labelStyle}>Job Description</label>
-          <textarea
-            style={taStyle}
-            rows={8}
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            placeholder="Paste the full job description here..."
-          />
-
-          <label style={labelStyle}>Your CV</label>
-          <textarea
-            style={taStyle}
-            rows={10}
-            value={cvText}
-            onChange={(e) => setCvText(e.target.value)}
-            placeholder="Paste your existing CV text here..."
-          />
-
-          {error && (
-            <p style={{ color: "#b42318", marginTop: "0.3rem", fontSize: "0.9rem" }}>
-              {error}
-            </p>
-          )}
-
-          <div style={btnRowStyle}>
-            <button
-              onClick={handleAnalyse}
-              disabled={loadingAts}
-              style={primaryBtn}
-            >
+          <div className="inline-actions mt-12">
+            <PrimaryButton onClick={handleAnalyse} disabled={loadingAts || disableActions}>
               {loadingAts ? "Analysing..." : "Analyse ATS Match"}
-            </button>
-            <button
-              onClick={handleFullResume}
-              disabled={loadingFull}
-              style={secondaryBtn}
-            >
-              {loadingFull ? "Generating full resume..." : "Generate Full Resume"}
-            </button>
+            </PrimaryButton>
+            <SecondaryButton onClick={handleFullResume} disabled={loadingFull || disableActions}>
+              {loadingFull ? "Generating resume..." : "Generate Full Resume"}
+            </SecondaryButton>
           </div>
-        </div>
-      </section>
 
-      <section style={bottomSectionStyle}>
-        <div style={blockStyle}>
-          <h2 style={h2Style}>ATS Match Overview</h2>
-          {atsScore !== null && (
-            <p style={{ fontWeight: 600 }}>
-              ATS Match Score: <span>{atsScore}%</span>
-            </p>
-          )}
+          <div className="stack mt-12">
+            <ErrorBanner message={error} />
+            <SuccessBanner message={success} />
+          </div>
+        </Card>
+      </Section>
 
-          <div style={keywordGridStyle}>
-            <div>
-              <h3 style={h3Style}>Matched Keywords</h3>
-              <div style={chipWrapStyle}>
-                {matched.map((w) => (
-                  <span key={w} style={chipGreen}>
-                    {w}
+      <Section title="Results" subtitle="ATS signals on the left, recruiter-ready resume on the right.">
+        <div className="card-grid">
+          <Card title="ATS Match Overview">
+            {atsScore !== null && (
+                <div className="badge" aria-live="polite">
+                  ATS Match Score: <strong>{atsScore}%</strong>
+                </div>
+              )}
+
+              <div className="form-row mt-12">
+              <div className="stack">
+                <div className="section-title">Matched Keywords</div>
+                <div className="chip-row">
+                  {matched.map((w) => (
+                    <span key={w} className="chip success">
+                      {w}
+                    </span>
+                  ))}
+                  {!matched.length && (
+                    <span className="section-subtitle">Run analysis to see matched keywords.</span>
+                  )}
+                </div>
+              </div>
+              <div className="stack">
+                <div className="section-title">Missing Keywords</div>
+                <div className="chip-row">
+                  {missing.map((w) => (
+                    <span key={w} className="chip danger">
+                      {w}
+                    </span>
+                  ))}
+                  {!missing.length && (
+                    <span className="section-subtitle">Run analysis to see missing keywords.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+              <div className="stack mt-16">
+              <div className="section-title">Optimised Resume Draft (Summary)</div>
+              <div className="pre-box">
+                {optimisedDraft ? (
+                  optimisedDraft
+                ) : (
+                  <span className="section-subtitle">
+                    After ATS analysis, a short optimised draft will appear here.
                   </span>
-                ))}
-                {!matched.length && (
-                  <p style={{ color: "#777", fontSize: "0.9rem" }}>
-                    Run analysis to see matched keywords.
-                  </p>
                 )}
               </div>
             </div>
-            <div>
-              <h3 style={h3Style}>Missing Keywords</h3>
-              <div style={chipWrapStyle}>
-                {missing.map((w) => (
-                  <span key={w} style={chipRed}>
-                    {w}
-                  </span>
-                ))}
-                {!missing.length && (
-                  <p style={{ color: "#777", fontSize: "0.9rem" }}>
-                    Run analysis to see missing keywords.
-                  </p>
-                )}
+          </Card>
+
+          <Card
+            title="Full AI Resume (Send to recruiters)"
+            actions={
+              <div className="inline-actions">
+                <GhostButton onClick={handleCopyFull} disabled={!fullResume || disableActions}>
+                  Copy Text
+                </GhostButton>
+                <GhostButton
+                  onClick={handleDownloadPdf}
+                  disabled={!fullResume || downloadingPdf || disableActions}
+                >
+                  {downloadingPdf ? "Downloading..." : "Download PDF"}
+                </GhostButton>
+                <GhostButton
+                  onClick={handleDownloadWord}
+                  disabled={!fullResume || downloadingWord || disableActions}
+                >
+                  {downloadingWord ? "Downloading..." : "Download Word"}
+                </GhostButton>
               </div>
+            }
+          >
+            <div className="pre-box" aria-live="polite">
+              {fullResume ? (
+                fullResume
+              ) : (
+                <span className="section-subtitle">
+                  Click Generate Full Resume to create a clean, ATS-friendly resume you can
+                  paste into Word/Google Docs and save as PDF, or download directly.
+                </span>
+              )}
             </div>
-          </div>
-
-          <h3 style={h3Style}>Optimised Resume Draft (Summary)</h3>
-          <div style={preBoxStyle}>
-            {optimisedDraft ? (
-              <pre style={preStyle}>{optimisedDraft}</pre>
-            ) : (
-              <p style={{ color: "#777", fontSize: "0.9rem" }}>
-                After ATS analysis, a short optimised draft will appear here.
-              </p>
-            )}
-          </div>
+          </Card>
         </div>
-
-        <div style={blockStyle}>
-          <div style={fullHeaderStyle}>
-            <h2 style={h2Style}>Full AI Resume (Send to Recruiters)</h2>
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-              <button
-                onClick={handleCopyFull}
-                disabled={!fullResume}
-                style={copyBtnStyle}
-              >
-                Copy Text
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={!fullResume || downloadingPdf}
-                style={copyBtnStyle}
-              >
-                {downloadingPdf ? "Downloading..." : "Download PDF"}
-              </button>
-              <button
-                onClick={handleDownloadWord}
-                disabled={!fullResume || downloadingWord}
-                style={copyBtnStyle}
-              >
-                {downloadingWord ? "Downloading..." : "Download Word"}
-              </button>
-            </div>
-          </div>
-          <div style={preBoxStyle}>
-            {fullResume ? (
-              <pre style={preStyle}>{fullResume}</pre>
-            ) : (
-              <p style={{ color: "#777", fontSize: "0.9rem" }}>
-                Click <strong>Generate Full Resume</strong> to create a clean,
-                ATS-friendly resume you can paste into Word/Google Docs and save as PDF,
-                or download directly.
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-    </main>
+      </Section>
+    </Layout>
   );
 }
-
-const pageStyle = {
-  minHeight: "100vh",
-  padding: "2rem 1.5rem 3rem",
-  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-};
-
-const topSectionStyle = {
-  maxWidth: "1100px",
-  margin: "0 auto 2rem",
-};
-
-const columnStyle = {
-  maxWidth: "900px",
-  margin: "0 auto",
-};
-
-const labelStyle = {
-  display: "block",
-  fontWeight: 600,
-  fontSize: "0.9rem",
-  marginTop: "0.75rem",
-  marginBottom: "0.3rem",
-};
-
-const taStyle = {
-  width: "100%",
-  borderRadius: "10px",
-  border: "1px solid #ccc",
-  padding: "0.75rem",
-  fontSize: "0.9rem",
-  lineHeight: 1.4,
-};
-
-const btnRowStyle = {
-  display: "flex",
-  gap: "0.75rem",
-  marginTop: "0.9rem",
-  flexWrap: "wrap",
-};
-
-const primaryBtn = {
-  padding: "0.7rem 1.3rem",
-  borderRadius: "999px",
-  border: "none",
-  background: "#111",
-  color: "#fff",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const secondaryBtn = {
-  padding: "0.7rem 1.3rem",
-  borderRadius: "999px",
-  border: "1px solid #111",
-  background: "#fff",
-  color: "#111",
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const bottomSectionStyle = {
-  maxWidth: "1100px",
-  margin: "0 auto",
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1fr)",
-  gap: "1.5rem",
-};
-
-const blockStyle = {
-  borderRadius: "14px",
-  border: "1px solid #eee",
-  padding: "1rem 1.2rem",
-  background: "#fafafa",
-};
-
-const h2Style = {
-  fontSize: "1.2rem",
-  margin: 0,
-  marginBottom: "0.5rem",
-};
-
-const h3Style = {
-  fontSize: "1rem",
-  marginTop: "0.75rem",
-  marginBottom: "0.4rem",
-};
-
-const keywordGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-  gap: "0.75rem",
-  marginTop: "0.5rem",
-};
-
-const chipWrapStyle = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "0.4rem",
-};
-
-const chipBase = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0.2rem 0.55rem",
-  borderRadius: "999px",
-  fontSize: "0.8rem",
-};
-
-const chipGreen = {
-  ...chipBase,
-  background: "#e8f9f0",
-  border: "1px solid #9bd7b5",
-};
-
-const chipRed = {
-  ...chipBase,
-  background: "#fdeced",
-  border: "1px solid #f6a5ac",
-};
-
-const preBoxStyle = {
-  marginTop: "0.75rem",
-  borderRadius: "10px",
-  border: "1px solid #e0e0e0",
-  background: "#fff",
-  padding: "0.8rem",
-  maxHeight: "420px",
-  overflow: "auto",
-};
-
-const preStyle = {
-  whiteSpace: "pre-wrap",
-  fontFamily:
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  fontSize: "0.85rem",
-  margin: 0,
-};
-
-const fullHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "0.5rem",
-};
-
-const copyBtnStyle = {
-  padding: "0.4rem 0.9rem",
-  borderRadius: "999px",
-  border: "1px solid #ccc",
-  background: "#fff",
-  fontSize: "0.85rem",
-  cursor: "pointer",
-};
