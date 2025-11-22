@@ -40,3 +40,21 @@ export async function apiPost(path, body) {
     return { ok: false, error: "Network error" };
   }
 }
+
+export async function apiGet(path) {
+  try {
+    const res = await fetch(`${BASE_URL}${path}`);
+    const data = await parseJson(res);
+
+    if (!res.ok) {
+      const errorMessage =
+        data?.error || data?.message || `Request failed with status ${res.status}`;
+      return { ok: false, error: errorMessage };
+    }
+
+    return normalizeSuccess(data);
+  } catch (err) {
+    console.error("apiGet error", err);
+    return { ok: false, error: "Network error" };
+  }
+}

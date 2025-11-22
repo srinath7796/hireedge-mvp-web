@@ -1,7 +1,26 @@
 // pages/index.js
 import Head from "next/head";
+import { useEffect, useState } from "react";
+import { apiGet } from "../utils/apiClient";
 
 export default function Home() {
+  const [status, setStatus] = useState({ loading: true });
+
+  useEffect(() => {
+    let mounted = true;
+    apiGet("/api/health").then((res) => {
+      if (!mounted) return;
+      if (res.ok) {
+        setStatus({ loading: false, data: res });
+      } else {
+        setStatus({ loading: false, error: res.error });
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <>
       <Head>
@@ -20,6 +39,8 @@ export default function Home() {
             career intelligence (resume, skills, roadmap, profile, gaps,
             interviews & visa).
           </p>
+
+          <StatusStrip status={status} />
         </section>
 
         {/* BUTTON GRID */}
@@ -91,6 +112,44 @@ function ToolButton({ href, label }) {
   );
 }
 
+function StatusStrip({ status }) {
+  if (status.loading) {
+    return (
+      <div style={statusStripStyle}>
+        <StatusPill color="#555" label="Checking system" />
+        <p style={statusText}>Performing live readiness check...</p>
+      </div>
+    );
+  }
+
+  if (status.error) {
+    return (
+      <div style={statusStripStyle}>
+        <StatusPill color="#b42318" label="Attention" />
+        <p style={statusText}>{status.error}</p>
+      </div>
+    );
+  }
+
+  const data = status.data || {};
+  return (
+    <div style={statusStripStyle}>
+      <StatusPill color="#0f9d58" label="Live" />
+      <p style={statusText}>
+        Model: <strong>{data.model}</strong> · OpenAI key {data.openaiConfigured ? "configured" : "missing"}
+      </p>
+    </div>
+  );
+}
+
+function StatusPill({ label, color }) {
+  return (
+    <span style={{ ...pillStyle, color, borderColor: color }}>
+      {label}
+    </span>
+  );
+}
+
 // ---- styles ----
 const pageStyle = {
   minHeight: "100vh",
@@ -141,6 +200,35 @@ const btnStyle = {
   fontSize: "0.95rem",
   background: "#f7f4ff",
   cursor: "pointer"
+};
+
+const statusStripStyle = {
+  marginTop: "1rem",
+  padding: "0.8rem 1rem",
+  borderRadius: "12px",
+  background: "#f6f9ff",
+  border: "1px solid #dbe7ff",
+  display: "flex",
+  alignItems: "center",
+  gap: "0.6rem",
+  justifyContent: "center",
+};
+
+const statusText = {
+  margin: 0,
+  color: "#334155",
+  fontSize: "0.95rem",
+};
+
+const pillStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0.25rem 0.7rem",
+  borderRadius: "999px",
+  border: "1px solid",
+  fontWeight: 600,
+  fontSize: "0.85rem",
 };
 
 const detailsSectionStyle = {
