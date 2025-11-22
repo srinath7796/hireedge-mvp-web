@@ -64,43 +64,6 @@ export default function ResumeOptimiserPage() {
     }
   };
 
-  const handleDownloadPdf = async () => {
-    if (!fullResume) {
-      alert("Generate the full resume first.");
-      return;
-    }
-    try {
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF({
-        unit: "pt",
-        format: "a4",
-      });
-
-      const margin = 40;
-      const lineHeight = 14;
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const maxWidth =
-        doc.internal.pageSize.getWidth() - margin * 2;
-
-      const lines = doc.splitTextToSize(fullResume, maxWidth);
-      let cursorY = margin;
-
-      lines.forEach((line) => {
-        if (cursorY > pageHeight - margin) {
-          doc.addPage();
-          cursorY = margin;
-        }
-        doc.text(line, margin, cursorY);
-        cursorY += lineHeight;
-      });
-
-      doc.save("HireEdge-Resume.pdf");
-    } catch (err) {
-      console.error("PDF error", err);
-      alert("Could not generate PDF in browser. Please copy text and paste into Word/PDF as fallback.");
-    }
-  };
-
   return (
     <main style={pageStyle}>
       <section style={topSectionStyle}>
@@ -214,22 +177,13 @@ export default function ResumeOptimiserPage() {
         <div style={blockStyle}>
           <div style={fullHeaderStyle}>
             <h2 style={h2Style}>Full AI Resume (Send to Recruiters)</h2>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <button
-                onClick={handleCopyFull}
-                disabled={!fullResume}
-                style={copyBtnStyle}
-              >
-                Copy Text
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={!fullResume}
-                style={copyBtnStyle}
-              >
-                Download PDF
-              </button>
-            </div>
+            <button
+              onClick={handleCopyFull}
+              disabled={!fullResume}
+              style={copyBtnStyle}
+            >
+              Copy Resume Text
+            </button>
           </div>
           <div style={preBoxStyle}>
             {fullResume ? (
@@ -237,8 +191,8 @@ export default function ResumeOptimiserPage() {
             ) : (
               <p style={{ color: "#777", fontSize: "0.9rem" }}>
                 Click <strong>Generate Full Resume</strong> to create a clean,
-                ATS-friendly resume you can paste into Word/Google Docs and
-                save as PDF – or download directly as a PDF.
+                ATS-friendly resume you can paste into Word/Google Docs and save
+                as PDF.
               </p>
             )}
           </div>
@@ -361,7 +315,7 @@ const chipBase = {
 const chipGreen = {
   ...chipBase,
   background: "#e8f9f0",
-  border: "1px solid "#9bd7b5",
+  border: "1px solid #9bd7b5",
 };
 
 const chipRed = {
