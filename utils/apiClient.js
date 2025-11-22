@@ -1,8 +1,7 @@
 // utils/apiClient.js
 // Simple fetch wrapper for backend API calls with consistent error handling.
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://hireedge-backend-mvp.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 async function parseJson(response) {
   try {

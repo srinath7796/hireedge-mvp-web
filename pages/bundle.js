@@ -18,6 +18,16 @@ export default function CareerEngineBundlePage() {
       return;
     }
 
+    let parsedProfile = {};
+    try {
+      parsedProfile = userProfile ? JSON.parse(userProfile) : {};
+    } catch (err) {
+      const message = "User profile must be valid JSON (or leave it blank).";
+      setError(message);
+      alert(message);
+      return;
+    }
+
     setLoading(true);
     setError("");
     setReport(null);
@@ -26,7 +36,7 @@ export default function CareerEngineBundlePage() {
       const response = await apiPost("/api/career-engine-report", {
         jobDescription,
         cvText,
-        userProfile: userProfile ? JSON.parse(userProfile) : {},
+        userProfile: parsedProfile,
       });
 
       if (!response?.ok) {
