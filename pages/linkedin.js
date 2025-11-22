@@ -137,7 +137,7 @@ export default function LinkedinOptimiserPage() {
       {/* Results */}
       {result && result.ok && (
         <section style={{ marginTop: "2rem", display: "grid", gap: "1.5rem" }}>
-          {/* Headline & About */}
+          {/* Headline */}
           <div
             style={{
               padding: "1rem",
@@ -146,12 +146,11 @@ export default function LinkedinOptimiserPage() {
               background: "#fafafa",
             }}
           >
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem" }}>
-              Headline
-            </h2>
-            <p style={{ margin: 0 }}>{result.headline}</p>
+            <h2>Headline</h2>
+            <p>{result.headline}</p>
           </div>
 
+          {/* About section */}
           <div
             style={{
               padding: "1rem",
@@ -160,29 +159,19 @@ export default function LinkedinOptimiserPage() {
               background: "#fafafa",
             }}
           >
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem" }}>
-              About Section
-            </h2>
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                margin: 0,
-                fontFamily: "inherit",
-                lineHeight: 1.5,
-              }}
-            >
-              {result.about}
-            </pre>
+            <h2>About Section</h2>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{result.about}</pre>
           </div>
 
-          {/* Strengths + Keywords + Hashtags */}
+          {/* Strengths / Keywords / Hashtags */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: "repeat(3, 1fr)",
               gap: "1rem",
             }}
           >
+            {/* Strengths */}
             <div
               style={{
                 borderRadius: "10px",
@@ -191,14 +180,15 @@ export default function LinkedinOptimiserPage() {
                 padding: "0.75rem",
               }}
             >
-              <h3 style={{ marginTop: 0, fontSize: "1rem" }}>Strengths</h3>
-              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+              <h3>Strengths</h3>
+              <ul>
                 {result.strengths.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ul>
             </div>
 
+            {/* Keywords */}
             <div
               style={{
                 borderRadius: "10px",
@@ -207,16 +197,15 @@ export default function LinkedinOptimiserPage() {
                 padding: "0.75rem",
               }}
             >
-              <h3 style={{ marginTop: 0, fontSize: "1rem" }}>
-                Recruiter Keywords
-              </h3>
-              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+              <h3>Recruiter Keywords</h3>
+              <ul>
                 {result.searchKeywords.map((k, i) => (
                   <li key={i}>{k}</li>
                 ))}
               </ul>
             </div>
 
+            {/* Hashtags */}
             <div
               style={{
                 borderRadius: "10px",
@@ -225,8 +214,8 @@ export default function LinkedinOptimiserPage() {
                 padding: "0.75rem",
               }}
             >
-              <h3 style={{ marginTop: 0, fontSize: "1rem" }}>Hashtags</h3>
-              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+              <h3>Hashtags</h3>
+              <ul>
                 {result.hashtags.map((h, i) => (
                   <li key={i}>{h}</li>
                 ))}
@@ -235,32 +224,28 @@ export default function LinkedinOptimiserPage() {
           </div>
 
           {/* Experience bullets */}
-          {result.experienceBullets && result.experienceBullets.length > 0 && (
-            <div
-              style={{
-                padding: "1rem",
-                borderRadius: "12px",
-                border: "1px solid #eee",
-                background: "#fafafa",
-              }}
-            >
-              <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem" }}>
-                Experience Bullet Points
-              </h2>
-              <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
-                {result.experienceBullets.map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: "12px",
+              border: "1px solid #eee",
+              background: "#fafafa",
+            }}
+          >
+            <h2>Experience Bullets</h2>
+            <ul>
+              {result.experienceBullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
 
-      {/* Error state */}
+      {/* Error */}
       {result && !result.ok && (
         <p style={{ marginTop: "1.5rem", color: "red" }}>
-          Error: {result.error || "Something went wrong"}
+          Error: {result.error}
         </p>
       )}
     </main>
